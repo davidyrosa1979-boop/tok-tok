@@ -1,6 +1,6 @@
 {
   "packageId": "com.toktok.live",
-  "host": "legitimate-proteins-pci-loaded.trycloudflare.com",
+  "host": "tok-tok-live.onrender.com",
   "name": "Tok Tok Live",
   "launcherName": "Tok Tok",
   "display": "standalone",
@@ -13,8 +13,8 @@
   "backgroundColor": "#0C0D14",
   "enableNotifications": true,
   "startUrl": "/index.html",
-  "iconUrl": "https://legitimate-proteins-pci-loaded.trycloudflare.com/icon-512.png",
-  "maskableIconUrl": "https://legitimate-proteins-pci-loaded.trycloudflare.com/icon-512.png",
+  "iconUrl": "https://tok-tok-live.onrender.com/icon-512.png",
+  "maskableIconUrl": "https://tok-tok-live.onrender.com/icon-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
@@ -24,7 +24,7 @@
   "appVersionCode": 6,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://legitimate-proteins-pci-loaded.trycloudflare.com/manifest.json",
+  "webManifestUrl": "https://tok-tok-live.onrender.com/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
@@ -33,7 +33,7 @@
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://legitimate-proteins-pci-loaded.trycloudflare.com/",
+  "fullScopeUrl": "https://tok-tok-live.onrender.com/",
   "minSdkVersion": 24,
   "orientation": "portrait",
   "fingerprints": [],

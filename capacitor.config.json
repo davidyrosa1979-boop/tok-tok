@@ -4,7 +4,7 @@
   "webDir": ".",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://legitimate-proteins-pci-loaded.trycloudflare.com",
+    "url": "https://tok-tok-live.onrender.com",
     "cleartext": true
   },
   "android": {

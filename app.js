@@ -2790,7 +2790,7 @@ function setupEventListeners() {
   // Copiar URL Directa Móvil y actualizar enlace de WhatsApp
   const inputDirectUrl = document.getElementById("mobileDirectUrlInput");
   const waShareBtn = document.getElementById("whatsappShareBtn");
-  const defaultPublicUrl = "https://legitimate-proteins-pci-loaded.trycloudflare.com";
+  const defaultPublicUrl = "https://tok-tok-live.onrender.com";
   
   if (inputDirectUrl) {
     const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
@@ -5212,7 +5212,7 @@ function createNewIndependentRoom(roomName) {
 
 function shareCurrentRoom() {
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  const defaultPublicUrl = "https://legitimate-proteins-pci-loaded.trycloudflare.com";
+  const defaultPublicUrl = "https://tok-tok-live.onrender.com";
   const baseOrigin = isLocalhost ? defaultPublicUrl : window.location.origin;
   const roomParam = TokTokState.roomId && TokTokState.roomId !== "main" ? `?room=${encodeURIComponent(TokTokState.roomId)}` : "";
   const shareUrl = `${baseOrigin}/${roomParam}`;
