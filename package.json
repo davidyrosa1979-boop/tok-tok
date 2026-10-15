@@ -2,9 +2,9 @@
   "name": "toktok-live",
   "version": "1.1.0-beta.1",
   "description": "Tok Tok (+18) - Live Video Rooms with 16 Guests",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
-    "start": "python -m http.server 3000",
+    "start": "node server.js",
     "cap:init": "cap init",
     "cap:add": "cap add android",
     "cap:sync": "cap sync",
