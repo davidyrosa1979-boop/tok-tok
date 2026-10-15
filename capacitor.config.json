@@ -1,0 +1,15 @@
+{
+  "appId": "com.toktok.live",
+  "appName": "Tok Tok",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://legitimate-proteins-pci-loaded.trycloudflare.com",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

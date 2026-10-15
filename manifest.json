@@ -1,0 +1,24 @@
+{
+  "name": "Tok Tok (+18)",
+  "short_name": "Tok Tok",
+  "description": "Tok Tok Live (+18) - Plataforma de videollamadas y salas en vivo para hasta 16 participantes.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c0d14",
+  "theme_color": "#fe2c55",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

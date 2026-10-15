@@ -1,0 +1,44 @@
+[
+  {
+    "id": "user_1792103135448",
+    "handle": "@invitado_5448",
+    "name": "Invitado",
+    "email": "",
+    "expelledAt": "2026-10-15T22:43:39.288Z"
+  },
+  {
+    "id": "user_1792103934465",
+    "handle": "@invitado_4465",
+    "name": "Invitado",
+    "email": "",
+    "expelledAt": "2026-10-15T22:43:37.307Z"
+  },
+  {
+    "id": "user_1792104029918",
+    "handle": "@invitado_9918",
+    "name": "Invitado",
+    "email": "",
+    "expelledAt": "2026-10-15T22:43:35.224Z"
+  },
+  {
+    "id": "user_1792104083793",
+    "handle": "@invitado_3793",
+    "name": "Invitado",
+    "email": "",
+    "expelledAt": "2026-10-15T22:43:33.079Z"
+  },
+  {
+    "id": "user_1792104173444",
+    "handle": "@invitado_3444",
+    "name": "Invitado",
+    "email": "",
+    "expelledAt": "2026-10-15T22:43:30.304Z"
+  },
+  {
+    "id": "user_rosa_guest",
+    "handle": "@rosaydavid",
+    "name": "Rosa y David",
+    "email": "",
+    "expelledAt": "2026-10-15T22:40:12.880Z"
+  }
+]

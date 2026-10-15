@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tok Tok Live (+18) - Sala Multi-Dispositivo</title>
+  <meta name="description" content="Tok Tok Live (+18) - Plataforma de videollamadas y salas en vivo para mayores de 18 años con hasta 16 participantes simultáneos con cámara, micrófono, regalos y chat interactivo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#fe2c55">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tok Tok">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=14">
+</head>
+<body class="toktok-theme">
+  <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
+  <audio id="tokLiveRemoteAudio" autoplay playsinline style="display:none;"></audio>
+
+  <!-- Contenedor Principal de la Aplicación -->
+  <div class="app-layout">
+    
+    <!-- Barra Superior / Header Live -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-logo">
+          <span class="brand-glyph dynamic-live-glyph" title="Tok Tok Live (+18)">
+            <svg class="dynamic-stream-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" fill="#fff"></circle>
+              <path d="M4.93 4.93a10 10 0 0 0 0 14.14" stroke="#25f4ee"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="#fe2c55"></path>
+              <path d="M7.76 7.76a6 6 0 0 0 0 8.48" stroke="#25f4ee"></path>
+              <path d="M16.24 7.76a6 6 0 0 1 0 8.48" stroke="#fe2c55"></path>
+            </svg>
+          </span>
+          <span class="brand-text"><span class="brand-accent">Tok Tok</span></span>
+          <span class="live-pill"><span class="pulse-dot"></span> LIVE</span>
+          <span class="age-badge" style="background: rgba(254,44,85,0.18); border: 1px solid #fe2c55; color: #fe2c55; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 11px; margin-left: 6px; letter-spacing: 0.5px;">🔞 +18</span>
+        </div>
+
+        <div class="room-details">
+          <div class="room-title-row">
+            <h1 class="room-title" id="roomTitleDisplay">Tok Tok Live • Sala Oficial DYR <span style="font-size: 11px; color: #fe2c55; border: 1px solid #fe2c55; padding: 1px 5px; border-radius: 4px; vertical-align: middle; margin-left: 6px; font-weight: 800;">+18</span></h1>
+            <button class="btn-room-badge" id="openRoomsModalBtn" title="Ver salas en vivo activas o cambiar de sala">
+              <span>🏠 Salas en Vivo</span>
+            </button>
+            <button class="icon-edit-btn" id="editRoomTitleBtn" title="Cambiar título de la sala">✏️</button>
+          </div>
+          <div class="room-substats">
+            <span class="stat-tag"><i class="tag-icon">👥</i> <strong id="guestCounterBadge">0/15 invitados</strong> (16 máx)</span>
+            <span class="stat-tag"><i class="tag-icon">👀</i> <strong id="viewerCountDisplay">1.2k</strong> espectadores</span>
+            <span class="stat-tag"><i class="tag-icon">💎</i> <strong id="diamondCountDisplay">14.8k</strong> diamantes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Selector de Modo de Pantalla -->
+        <div class="layout-switch-bar">
+          <button class="layout-btn active" id="layoutGridBtn" title="Modo Cuadrícula 16">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+            </svg>
+            <span>Cuadrícula</span>
+          </button>
+          <button class="layout-btn" id="layoutSpeakerBtn" title="Modo Destacado">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="18" height="11" rx="2"></rect>
+              <rect x="3" y="16" width="5" height="5" rx="1"></rect>
+              <rect x="9.5" y="16" width="5" height="5" rx="1"></rect>
+              <rect x="16" y="16" width="5" height="5" rx="1"></rect>
+            </svg>
+            <span>Destacado</span>
+          </button>
+        </div>
+
+        <!-- Botón Directorio de Usuarios Registrados -->
+        <button class="btn-pill btn-invite" id="openInviteModalBtn">
+          <span class="btn-icon">👥</span>
+          <span id="inviteBtnLabel">Invitar Registrados (0/15)</span>
+        </button>
+
+        <!-- Insignia Dorada CREADOR OFICIAL -->
+        <div class="creator-crown-pill" id="headerCreatorPill" title="Creador Oficial de TokRoom">
+          <span class="crown-icon">👑</span>
+          <span class="creator-label">CREADOR</span>
+        </div>
+
+        <!-- Saldo de Monedas Infinitas del Creador -->
+        <div class="coins-balance-pill" id="headerCoinsPill" title="Saldo de Monedas TokRoom">
+          <span class="coin-icon">🪙</span>
+          <span class="coin-amount" id="headerCoinsDisplay">∞ Infinitas</span>
+        </div>
+
+        <!-- Botón Mi Perfil Registrado -->
+        <button class="btn-pill btn-profile" id="openProfileModalBtn" title="Mi perfil de usuario">
+          <span class="profile-avatar-mini" id="headerProfileAvatar" style="background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); color: #000; font-weight: 900;">👑</span>
+          <span id="headerProfileName">DYR (Creador)</span>
+        </button>
+
+        <!-- Botón Cerrar Sesión / Cambiar Cuenta -->
+        <button class="btn-pill" id="quickLogoutHeaderBtn" title="Cerrar Sesión / Cambiar de Usuario" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); font-size: 11.5px; padding: 6px 10px; cursor: pointer;">
+          <span>🚪 Salir</span>
+        </button>
+
+        <!-- Botón Normas de la Comunidad -->
+        <button class="btn-pill btn-rules" id="openRulesModalBtn" title="Ver normas de la comunidad">
+          <span class="btn-icon">📜</span>
+          <span>Normas</span>
+        </button>
+
+        <!-- Botón Menú de Control del Anfitrión -->
+        <button class="btn-pill btn-moderation" id="openHostControlModalBtn" title="Panel de control y moderación de la sala">
+          <span class="btn-icon">🛡️</span>
+          <span>Menú Anfitrión</span>
+        </button>
+
+        <!-- Botón Descargar App Móvil -->
+        <button class="btn-pill btn-download" id="openDownloadModalBtn" title="Descargar e instalar en el teléfono móvil">
+          <span class="btn-icon">📲</span>
+          <span>Descargar App</span>
+        </button>
+        
+        <!-- Botón Compartir Enlace Directo a esta Sala -->
+        <button class="btn-pill btn-share-room" id="shareRoomBtn" title="Copiar enlace directo de esta sala para invitar amigos por WhatsApp">
+          <span class="btn-icon">🔗</span>
+          <span>Compartir Sala</span>
+        </button>
+
+        <button class="btn-pill btn-danger" id="endRoomBtn" title="Salir de la sala">
+          <span>Salir</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Notificación Flotante de Petición de Entrada en Vivo estilo TOK TOK (Oculto hasta que alguien solicite) -->
+    <div class="incoming-request-banner" id="incomingRequestBanner" style="display: none;">
+      <div class="req-banner-inner">
+        <div class="req-avatar" id="reqAvatar">👤</div>
+        <div class="req-details">
+          <span class="req-username" id="reqUsername">@usuario</span>
+          <span class="req-action-text">solicita unirse con cámara a los 15 asientos</span>
+        </div>
+        <div class="req-actions">
+          <button class="btn-req-accept" id="acceptIncomingReqBtn">Aceptar</button>
+          <button class="btn-req-reject" id="rejectIncomingReqBtn">Rechazar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra Segmentada Móvil para Navegación Cómoda y Ordenada -->
+    <nav class="mobile-segmented-bar" id="mobileSegmentedBar">
+      <button class="mob-seg-btn active" data-view="stage" id="mobTabStageBtn">
+        <span class="mob-tab-icon">🎥</span>
+        <span>Escenario (<span id="mobGuestCount">0</span>/15)</span>
+      </button>
+      <button class="mob-seg-btn" data-view="chat" id="mobTabChatBtn">
+        <span class="mob-tab-icon">💬</span>
+        <span>Chat en Vivo</span>
+      </button>
+      <button class="mob-seg-btn" data-view="guests" id="mobTabGuestsBtn">
+        <span class="mob-tab-icon">👥</span>
+        <span>Participantes</span>
+      </button>
+    </nav>
+
+    <!-- Área de Contenido: Cuadrícula de Video + Panel Lateral de la Sala -->
+    <main class="main-stage" id="mainStageContainer">
+      
+      <!-- Escenario de Video (Host + hasta 15 asientos de invitados) -->
+      <section class="video-stage-container" id="videoStageArea">
+        <div class="video-grid grid-16" id="videoGrid">
+          <!-- Los slots de video se renderizan dinámicamente aquí -->
+        </div>
+
+        <!-- Capa de Corazones Flotantes (Tap-to-Like al estilo TOK TOK) -->
+        <div class="floating-hearts-layer" id="heartsCanvasContainer"></div>
+
+        <!-- Banner de Regalo VIP Flotante (Oculto por defecto, solo salta al recibir regalo) -->
+        <div class="vip-gift-announcement" id="giftAnnouncement" style="display: none;">
+          <div class="gift-banner-inner">
+            <span class="gift-banner-img" id="giftBannerIcon">🎁</span>
+            <div class="gift-banner-info">
+              <span class="gift-sender" id="giftBannerSender">@usuario</span>
+              <span class="gift-name" id="giftBannerName">envió un Regalo</span>
+            </div>
+            <div class="gift-combo-bubble" id="giftComboBubble">x1</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel Lateral LIVE ROOM (Chat, Participantes y Controles) -->
+      <aside class="live-sidebar">
+        <!-- Pestañas del Panel -->
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" data-tab="chat">Chat en Vivo</button>
+          <button class="sidebar-tab" data-tab="guests">En Escenario (<span id="guestCountTab">0</span>/15)</button>
+        </div>
+
+        <!-- Pestaña 1: Chat en Vivo -->
+        <div class="tab-pane active" id="tabContentChat">
+          <!-- Top gifter / Meta del Live -->
+          <div class="live-goal-card">
+            <div class="goal-info">
+              <span class="goal-badge">🔥 SALA TOK TOK</span>
+              <span class="goal-text">Invita hasta 15 usuarios registrados</span>
+            </div>
+            <div class="goal-progress-bar">
+              <div class="goal-progress-fill" id="stageCapacityBar" style="width: 6.25%;"></div>
+            </div>
+          </div>
+
+          <!-- Mensajes de Chat Waterfall -->
+          <div class="chat-messages-container" id="chatContainer">
+            <!-- Mensajes generados dinámicamente -->
+          </div>
+
+          <!-- Acciones Rápidas del Chat -->
+          <div class="chat-quick-actions">
+            <button class="reaction-bubble-btn" data-reaction="🔥">🔥</button>
+            <button class="reaction-bubble-btn" data-reaction="❤️">❤️</button>
+            <button class="reaction-bubble-btn" data-reaction="👏">👏</button>
+            <button class="reaction-bubble-btn" data-reaction="😂">😂</button>
+            <button class="reaction-bubble-btn" data-reaction="🚀">🚀</button>
+          </div>
+
+          <!-- Formulario Enviar Mensaje -->
+          <form class="chat-input-form" id="chatForm">
+            <input 
+              type="text" 
+              id="chatInput" 
+              class="chat-input" 
+              placeholder="Añadir comentario..." 
+              autocomplete="off" 
+              maxlength="140"
+            />
+            <button type="submit" class="chat-send-btn" id="sendMsgBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Pestaña 2: Lista y Gestión de Participantes en Escenario -->
+        <div class="tab-pane" id="tabContentGuests">
+          <div class="guests-header-tools">
+            <span class="section-title">Participantes en Escenario</span>
+            <button class="btn-micro" id="openDirectoryFromSidebarBtn">+ Invitar Registrados</button>
+          </div>
+          <div class="guests-list" id="guestsListContainer">
+            <!-- Participantes renderizados dinámicamente -->
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Barra de Control Inferior / Dock Estilo TOK TOK -->
+    <footer class="app-dock">
+      <div class="dock-left">
+        <!-- Botón Micrófono Local -->
+        <button class="dock-btn active" id="toggleMicBtn">
+          <span class="dock-icon">🎙️</span>
+          <span class="dock-label">Micrófono</span>
+          <span class="dock-status" id="micStatusPill">ON</span>
+        </button>
+
+        <!-- Botón Menú de Control y Moderación del Anfitrión (Al lado del micrófono abajo a la izquierda) -->
+        <button class="dock-btn dock-btn-mod" id="dockHostControlBtn" title="Menú de control y moderación del anfitrión">
+          <span class="dock-icon">🛡️</span>
+          <span class="dock-label">Moderación</span>
+          <span class="dock-status" id="dockModStatusPill">HOST</span>
+        </button>
+
+        <!-- Botón Crear Sala (Al lado de Moderación, con formato y tamaño de bloque dock) -->
+        <button class="dock-btn dock-btn-create-room" id="dockCreateRoomBtn" title="Crear mi propia sala en vivo independiente">
+          <span class="dock-icon">➕</span>
+          <span class="dock-label">Crear Sala</span>
+          <span class="dock-status" id="dockRoomStatusPill" style="background: rgba(0, 242, 254, 0.2); color: var(--tok-cyan);">NUEVA</span>
+        </button>
+
+        <!-- Botón Cámara Local -->
+        <button class="dock-btn active" id="toggleCameraBtn">
+          <span class="dock-icon">📷</span>
+          <span class="dock-label">Cámara</span>
+          <span class="dock-status" id="cameraStatusPill">ON</span>
+        </button>
+
+        <!-- Filtros y Efectos / Belleza -->
+        <button class="dock-btn" id="toggleEffectsBtn">
+          <span class="dock-icon">✨</span>
+          <span class="dock-label">Filtros</span>
+        </button>
+
+        <!-- Botón Directorio Comunidad -->
+        <button class="dock-btn" id="dockOpenDirectoryBtn" title="Ver directorio de usuarios registrados">
+          <span class="dock-icon">👥</span>
+          <span class="dock-label">Comunidad</span>
+        </button>
+
+        <!-- Botón para Bajarse del Escenario (Visible cuando el usuario está en el escenario) -->
+        <button class="dock-btn dock-btn-leave-stage" id="dockLeaveStageBtn" style="display: none; background: rgba(254, 44, 85, 0.25); border-color: #fe2c55; color: #ff4d6d;" title="Bajarse del escenario y volver a ser espectador">
+          <span class="dock-icon">🚪</span>
+          <span class="dock-label">Bajar</span>
+          <span class="dock-status" style="background: #fe2c55; color: #fff;">SALIR</span>
+        </button>
+      </div>
+
+      <div class="dock-center">
+        <!-- Botón de Enviar Regalos -->
+        <button class="dock-gift-cta" id="openGiftDrawerBtn">
+          <span class="gift-burst-halo"></span>
+          <span class="gift-icon-3d">🎁</span>
+          <span class="gift-text">Regalos TokTok</span>
+        </button>
+
+        <!-- Botón de Like / Corazones Gigante -->
+        <button class="dock-like-cta" id="tapHeartBtn" title="Toca para enviar corazones">
+          <span class="heart-icon-anim">💖</span>
+          <span class="like-counter" id="likeCounterDisplay">14.2k</span>
+        </button>
+      </div>
+
+      <div class="dock-right">
+        <!-- Administrar Asientos (15 Invitados) -->
+        <button class="dock-pill-btn" id="dockSeatConfigBtn">
+          <span>🪑 Asientos (<span id="dockSeatCount">0</span>/15)</span>
+        </button>
+
+        <!-- Simular Petición de Entrada en Vivo para pruebas -->
+        <button class="dock-pill-btn btn-highlight" id="simulateRequestBtn" title="Simular que un usuario registrado pide subir con cámara">
+          <span>🔔 Simular Petición</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Banner Superior para cuando se está en Sala Privada -->
+  <div class="private-room-banner" id="privateRoomBanner" style="display: none;">
+    <div class="private-banner-left">
+      <span>🔒 Estás en tu Sala Privada</span>
+      <span class="private-banner-sub">Audio del directo de DYR apagado</span>
+    </div>
+    <button type="button" class="btn-enter-dyr-live" id="btnBannerEnterDyr">
+      🔴 Entrar a Sala de DYR
+    </button>
+  </div>
+
+  <!-- Pantalla de Entrada a la Sala / Lobby (Para usuarios que aún no se han unido a la sala) -->
+  <div class="room-entrance-overlay" id="roomEntranceOverlay" style="display: none;">
+    <div class="entrance-card">
+      <div class="entrance-badge-live">
+        <span class="pulse-dot"></span> EN DIRECTO AHORA (+18)
+      </div>
+      <div class="entrance-avatar-glow">
+        <div class="entrance-avatar">👑</div>
+      </div>
+      <h2 class="entrance-title" id="lobbyRoomTitle">Sala Oficial de DYR</h2>
+      <p class="entrance-subtitle">Tok Tok Live • Exclusivo para mayores de 18 años</p>
+      
+      <div class="entrance-stats-row">
+        <span>👥 Hasta 16 participantes</span>
+        <span>🎙️ Audio HD en vivo</span>
+        <span>🎁 Regalos y Chat</span>
+      </div>
+
+      <div class="entrance-actions">
+        <button type="button" class="btn-enter-room" id="btnEnterLiveRoom">
+          🔴 Entrar a la Sala en Vivo
+        </button>
+        <button type="button" class="btn-stay-private" id="btnStayPrivateRoom">
+          🔒 Permanecer en Mi Sala Privada
+        </button>
+        <button type="button" class="btn-lobby-switch-room" id="btnLobbySwitchRoom">
+          🏠 Ver Otras Salas / Crear Mi Sala
+        </button>
+      </div>
+
+      <div class="entrance-notice">
+        🔇 El audio y la transmisión en vivo están silenciados hasta que entres a la sala.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: REGISTRO OBLIGATORIO AL ENTRAR O DESCARGAR LA APP -->
+  <div class="modal-backdrop modal-mandatory" id="mandatoryRegisterModal">
+    <div class="modal-card modal-register-card">
+      <div class="modal-header header-mandatory">
+        <div class="modal-title-box">
+          <div class="logo-glow-icon" style="font-size: 20px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" fill="#fff"></circle>
+              <path d="M4.93 4.93a10 10 0 0 0 0 14.14" stroke="#25f4ee"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" stroke="#fe2c55"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="mand-pill">PASO OBLIGATORIO AL ENTRAR / DESCARGAR</div>
+            <h3>Bienvenido a Tok Tok <span style="font-size: 13px; color: #fe2c55; border: 1px solid #fe2c55; padding: 1px 6px; border-radius: 4px; vertical-align: middle;">+18</span></h3>
+            <span class="modal-subtitle">Regístrate para acceder a la sala en vivo (Solo mayores de 18 años)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- Pestañas de Autenticación -->
+        <div class="auth-tabs-row" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+          <button type="button" class="auth-tab-btn active" id="authTabLoginBtn" style="flex: 1; padding: 10px 14px; border-radius: 99px; font-weight: 800; font-size: 14px; cursor: pointer; border: none; background: #fe2c55; color: #fff; transition: all 0.2s;">
+            🔑 Iniciar Sesión con Correo
+          </button>
+          <button type="button" class="auth-tab-btn" id="authTabRegisterBtn" style="flex: 1; padding: 10px 14px; border-radius: 99px; font-weight: 700; font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #ccc; transition: all 0.2s;">
+            📝 Registrarse (Nuevo Usuario)
+          </button>
+        </div>
+
+        <!-- PANE 1: INICIAR SESIÓN CON CORREO -->
+        <div id="authPaneLogin" class="auth-pane active">
+          <div class="reg-notice-box" style="margin-bottom: 16px;">
+            <div class="reg-notice-item" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.08);">
+              <span class="reg-icon">👑</span>
+              <div>
+                <strong style="color: #ffd700;">Identificación Oficial por Correo</strong>
+                <p>El Creador Oficial (David / DYR) y Rosa (VIP) se identifican automáticamente mediante su correo registrado para acceder con monedas infinitas y control total.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="loginForm" class="mandatory-form" novalidate>
+            <div id="loginError" class="reg-error-box" style="display: none;"></div>
+
+            <div class="form-group">
+              <label for="loginEmailInput">Introduce tu Correo Electrónico Registrado: <span class="required-star">*</span></label>
+              <input type="email" id="loginEmailInput" class="form-input" placeholder="ejemplo: tu_correo@gmail.com" required autocomplete="email" style="font-size: 15px; padding: 12px 14px;" />
+              <span class="input-hint">El sistema cargará tu cuenta registrada y tus permisos correspondientes.</span>
+            </div>
+
+            <button type="submit" class="btn-primary-action btn-submit-register" id="btnSubmitLogin" style="margin-top: 14px;">
+              <span>🚀 Entrar a Tok Tok</span>
+            </button>
+          </form>
+
+          <div style="text-align: center; margin-top: 14px; font-size: 12px; color: var(--text-muted);">
+            ¿Aún no te has registrado en Tok Tok? 
+            <a href="#" id="linkGoToRegister" style="color: #25f4ee; font-weight: 700; text-decoration: none; margin-left: 4px;">Crear una cuenta aquí ➔</a>
+          </div>
+        </div>
+
+        <!-- PANE 2: REGISTRO DE NUEVO USUARIO -->
+        <div id="authPaneRegister" class="auth-pane" style="display: none;">
+          <div class="reg-notice-box">
+            <div class="reg-notice-item" style="border-left: 3px solid #fe2c55; background: rgba(254, 44, 85, 0.08);">
+              <span class="reg-icon">🔞</span>
+              <div>
+                <strong style="color: #fe2c55;">Exclusivo para Mayores de 18 Años (+18)</strong>
+                <p>Salas en vivo exclusivas para mayores de edad. Los nuevos usuarios inician como Invitados con 1,000 monedas estándar.</p>
+              </div>
+            </div>
+            <div class="reg-notice-item">
+              <span class="reg-icon">🚫</span>
+              <div>
+                <strong>Tolerancia Cero a Palabras Soeces</strong>
+                <p>Quedan prohibidos insultos o términos vulgares en el nombre, usuario o biografía.</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="mandatoryRegisterForm" class="mandatory-form" novalidate>
+            <div id="mandRegError" class="reg-error-box" style="display: none;"></div>
+
+            <div class="form-group">
+              <label for="mandRegName">Tu Nombre Completo o Artístico: <span class="required-star">*</span></label>
+              <input type="text" id="mandRegName" class="form-input" placeholder="Ej: Laura Gómez" maxlength="30" required autocomplete="name" />
+            </div>
+
+            <div class="form-group">
+              <label for="mandRegEmail">Correo Electrónico Válido: <span class="required-star">*</span></label>
+              <input type="email" id="mandRegEmail" class="form-input" placeholder="Ej: usuario@gmail.com" maxlength="60" required autocomplete="email" />
+              <span class="input-hint">Obligatorio. Se verificará la sintaxis real (ejemplo@dominio.com).</span>
+            </div>
+
+            <div class="form-group">
+              <label for="mandRegHandle">Nombre de Usuario en Tok Tok (@): <span class="required-star">*</span></label>
+              <div class="handle-input-wrap">
+                <span class="handle-prefix">@</span>
+                <input type="text" id="mandRegHandle" class="form-input handle-field" placeholder="laura_live" maxlength="20" required autocomplete="username" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="mandRegBio">Biografía / Rol (Opcional):</label>
+              <input type="text" id="mandRegBio" class="form-input" placeholder="Ej: Cantante y aficionada a la música 🎸" maxlength="60" />
+            </div>
+
+            <div class="form-group">
+              <label>Color de Avatar / Estilo:</label>
+              <div class="color-picker-row">
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#fe2c55" checked />
+                  <span class="color-swatch" style="background: #fe2c55;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#25f4ee" />
+                  <span class="color-swatch" style="background: #25f4ee;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#9b51e0" />
+                  <span class="color-swatch" style="background: #9b51e0;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#ff9900" />
+                  <span class="color-swatch" style="background: #ff9900;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#00c853" />
+                  <span class="color-swatch" style="background: #00c853;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="mandAvatarColor" value="#2979ff" />
+                  <span class="color-swatch" style="background: #2979ff;"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="terms-group">
+              <label class="terms-checkbox-label">
+                <input type="checkbox" id="mandRegTerms" required />
+                <span>Acepto las normas de la comunidad, certifico que mi <strong>correo electrónico es válido</strong> y me comprometo a no utilizar lenguaje soez ni insultos.</span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn-primary-action btn-submit-register" id="btnSubmitMandatoryRegister">
+              <span>✉️ Continuar y Enviar Correo de Verificación</span>
+            </button>
+          </form>
+
+          <div style="text-align: center; margin-top: 14px; font-size: 12px; color: var(--text-muted);">
+            ¿Ya te habías registrado antes? 
+            <a href="#" id="linkGoToLogin" style="color: #fe2c55; font-weight: 700; text-decoration: none; margin-left: 4px;">Inicia sesión con tu correo aquí ➔</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: VERIFICACIÓN DE CORREO ELECTRÓNICO OBLIGATORIA (PASO 2) -->
+  <div class="modal-backdrop modal-mandatory" id="emailVerificationModal">
+    <div class="modal-card modal-verify-card">
+      <div class="modal-header header-mandatory">
+        <div class="modal-title-box">
+          <div class="verify-mail-badge-icon">📩</div>
+          <div>
+            <div class="mand-pill mand-pill-cyan">PASO OBLIGATORIO • VERIFICACIÓN DE IDENTIDAD</div>
+            <h3>Verifica tu Correo Electrónico</h3>
+            <span class="modal-subtitle">Debes confirmar que tu correo es real para activar tu cuenta</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="verify-instructions-card">
+          <div class="verify-sent-icon">✉️</div>
+          <div class="verify-sent-info">
+            <span class="verify-sent-label">Hemos enviado un código de seguridad a:</span>
+            <div class="verify-target-email-chip" id="verifyTargetEmailDisplay">usuario@correo.com</div>
+            <p class="verify-sub-hint">Para activar tu cuenta debes entrar a tu correo y comprobar el código recibido.</p>
+          </div>
+        </div>
+
+        <!-- Botón interactivo de apertura de buzón de correo -->
+        <button type="button" class="btn-open-inbox" id="openInboxSimulatorBtn">
+          <span class="inbox-btn-icon">📬</span>
+          <div class="inbox-btn-texts">
+            <strong>Entrar a Mi Bandeja de Correo</strong>
+            <span>Ver el correo que te hemos enviado y activar en 1 clic</span>
+          </div>
+          <span class="inbox-btn-arrow">➔</span>
+        </button>
+
+        <form id="emailVerificationForm" class="verification-form" novalidate>
+          <div id="verifyCodeError" class="reg-error-box" style="display: none;"></div>
+
+          <div class="form-group" style="text-align: center; margin: 16px 0 10px 0;">
+            <label for="verifyPinInput" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+              Introduce el Código de 6 Dígitos de tu Correo:
+            </label>
+            <input 
+              type="text" 
+              id="verifyPinInput" 
+              class="pin-code-input" 
+              maxlength="6" 
+              placeholder="0 0 0 0 0 0" 
+              autocomplete="one-time-code"
+              inputmode="numeric" 
+              pattern="[0-9]*"
+              required 
+            />
+            <span class="input-hint" style="text-align: center;">Escribe los 6 números enviados a tu dirección.</span>
+            <div style="margin-top: 10px; display: flex; justify-content: center;">
+              <button type="button" id="quickAutoPastePinBtn" style="background: rgba(37, 244, 238, 0.15); border: 1px solid #25f4ee; color: #25f4ee; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                ⚡ Pegar Código de Activación Automático
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary-action btn-submit-verify" id="btnSubmitVerifyCode">
+            <span>✅ Activar Cuenta y Acceder a la Sala</span>
+          </button>
+        </form>
+
+        <div class="verify-footer-links">
+          <button type="button" class="btn-text-link" id="resendVerificationCodeBtn">
+            🔄 Reenviar nuevo correo
+          </button>
+          <span class="link-separator">•</span>
+          <button type="button" class="btn-text-link" id="changeEmailBtn">
+            ✏️ Corregir dirección de correo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: SIMULADOR INTERACTIVO DE BANDEJA DE CORREO -->
+  <div class="modal-backdrop" id="emailInboxSimulatorModal">
+    <div class="modal-card modal-inbox-card">
+      <div class="inbox-app-header">
+        <div class="inbox-header-title">
+          <span class="inbox-logo-badge">✉️</span>
+          <div>
+            <strong>Bandeja de Entrada de Correo</strong>
+            <span id="inboxRecipientDisplay">para: usuario@correo.com</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeInboxSimulatorBtn">&times;</button>
+      </div>
+
+      <div class="inbox-email-view">
+        <div class="email-envelope-meta">
+          <div class="email-avatar-sender">TR</div>
+          <div class="email-header-info">
+            <div class="email-from-line">
+              <strong>TokRoom Seguridad</strong> &lt;seguridad@tokroom.live&gt;
+            </div>
+            <div class="email-subject-line">
+              Asunto: <span>Código de verificación para activar tu cuenta</span>
+            </div>
+            <div class="email-time-line">Recibido: Hace unos instantes • Conexión Cifrada 🔒</div>
+          </div>
+        </div>
+
+        <div class="email-letter-body">
+          <div class="email-letter-brand">
+            <span class="letter-logo">♪ TokRoom</span>
+            <span class="letter-tag">Verificación Oficial</span>
+          </div>
+
+          <h3 id="emailGreetingName">¡Hola!</h3>
+          <p>
+            Has solicitado el registro en las salas en vivo de <strong>TokRoom</strong>. Para comprobar que esta dirección de correo es real y activar tu cuenta con acceso al micrófono, cámara y escenarios, utiliza el código a continuación:
+          </p>
+
+          <div class="email-secret-pin-box">
+            <span class="pin-label">CÓDIGO DE ACTIVACIÓN DE 6 DÍGITOS</span>
+            <div class="pin-number-display" id="inboxEmailCodeDisplay">------</div>
+            <span class="pin-expiry">⏱️ Válido durante 15 minutos</span>
+          </div>
+
+          <div class="email-action-cta-wrap">
+            <button type="button" class="btn-email-activate-now" id="btnActivateFromInbox">
+              ⚡ Confirmar Correo y Activar Cuenta Automáticamente
+            </button>
+          </div>
+
+          <div class="email-disclaimer">
+            <p>Este correo ha sido emitido para validar tu identidad de acuerdo con las normas de seguridad de la comunidad. Si no reconoces este registro, puedes desestimarlo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notificación Flotante de Correo Entrante -->
+  <div class="incoming-email-toast" id="incomingEmailToast" style="display: none;">
+    <div class="email-toast-icon">📩</div>
+    <div class="email-toast-content">
+      <strong>Código de Seguridad Tok Tok:</strong>
+      <span id="incomingToastSubject">Tu código es: ...</span>
+    </div>
+    <button type="button" class="btn-toast-view" id="incomingToastViewBtn">Abrir</button>
+    <button type="button" class="btn-toast-close" id="closeIncomingToastBtn" title="Cerrar notificación" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; margin-left: 2px;">&times;</button>
+  </div>
+
+  <!-- Modal Principal: DIRECTORIO DE USUARIOS REGISTRADOS E INVITACIONES -->
+  <div class="modal-backdrop" id="inviteModal">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">👥</span>
+          <div>
+            <h3>Directorio de Usuarios Registrados</h3>
+            <span class="modal-subtitle">Invita usuarios registrados a ocupar los 15 asientos de la llamada</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeInviteModalBtn">&times;</button>
+      </div>
+
+      <!-- Pestañas del Directorio -->
+      <div class="directory-tabs">
+        <button class="dir-tab active" data-dir-tab="list">Usuarios Registrados (<span id="registeredUsersCount">0</span>)</button>
+        <button class="dir-tab" data-dir-tab="new">➕ Registrar Nuevo Usuario</button>
+        <button class="dir-tab" data-dir-tab="requests">Peticiones de Entrada (<span id="pendingRequestsCount">0</span>)</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Vista 1: Lista de Usuarios Registrados -->
+        <div class="dir-view-pane active" id="dirPaneList">
+          <div class="dir-search-bar">
+            <input type="text" id="userSearchInput" class="dir-search-input" placeholder="Buscar por nombre o @usuario..." />
+            <button class="btn-dir-filter" id="filterOnlineBtn">Solo En Línea</button>
+          </div>
+
+          <div class="registered-users-list" id="registeredUsersListContainer">
+            <!-- Renderizado dinámicamente desde la base de datos local -->
+          </div>
+
+          <div class="stage-seats-summary">
+            <div class="seat-info-line">
+              <span>Estado de la llamada:</span>
+              <strong id="modalCapacityText">0 de 15 invitados en cámara</strong>
+            </div>
+            <div class="capacity-meter">
+              <div class="capacity-bar" id="modalCapacityBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista 2: Registrar Nuevo Usuario en Tok Tok -->
+        <div class="dir-view-pane" id="dirPaneNew">
+          <form class="new-user-form" id="newUserForm">
+            <p class="form-helper-text">
+              Registra amigos o cuentas nuevas en la aplicación para poder invitarlos al escenario en cualquier momento.
+            </p>
+
+            <div class="rules-warning-pill">
+              <span>⚠️ <strong>Normas Tok Tok:</strong> El correo electrónico es obligatorio y se prohíbe terminantemente cualquier palabra soez, insulto o lenguaje inapropiado.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="regFullName">Nombre Completo o Artístico: <span style="color:var(--tok-pink);">*</span></label>
+              <input type="text" id="regFullName" class="form-input" placeholder="Ej: Laura Gómez" required maxlength="30" />
+            </div>
+
+            <div class="form-group">
+              <label for="regEmail">Correo Electrónico (Obligatorio para verificar cuenta): <span style="color:var(--tok-pink);">*</span></label>
+              <input type="email" id="regEmail" class="form-input" placeholder="Ej: usuario@correo.com" required maxlength="60" autocomplete="email" />
+            </div>
+
+            <div class="form-group">
+              <label for="regUsername">Nombre de Usuario (@): <span style="color:var(--tok-pink);">*</span></label>
+              <input type="text" id="regUsername" class="form-input" placeholder="Ej: laura_live" required maxlength="20" />
+            </div>
+
+            <div class="form-group">
+              <label for="regBio">Biografía / Rol:</label>
+              <input type="text" id="regBio" class="form-input" placeholder="Ej: Creadora de contenido musical 🎸" maxlength="50" />
+            </div>
+
+            <div class="form-group">
+              <label>Color de Avatar / Estilo:</label>
+              <div class="color-picker-row">
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#fe2c55" checked />
+                  <span class="color-swatch" style="background: #fe2c55;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#25f4ee" />
+                  <span class="color-swatch" style="background: #25f4ee;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#9b51e0" />
+                  <span class="color-swatch" style="background: #9b51e0;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#ff9900" />
+                  <span class="color-swatch" style="background: #ff9900;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#00c853" />
+                  <span class="color-swatch" style="background: #00c853;"></span>
+                </label>
+                <label class="color-swatch-label">
+                  <input type="radio" name="avatarColor" value="#2979ff" />
+                  <span class="color-swatch" style="background: #2979ff;"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary-action">✅ Registrar Usuario en Tok Tok</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Vista 3: Peticiones de Entrada / Solicitudes para Unirse -->
+        <div class="dir-view-pane" id="dirPaneRequests">
+          <p class="form-helper-text">
+            Usuarios registrados que han pulsado "Solicitar unirse a la llamada" para compartir su cámara y micrófono contigo.
+          </p>
+          <div class="requests-list" id="requestsListContainer">
+            <!-- Peticiones dinámicas -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Mi Perfil Registrado -->
+  <div class="modal-backdrop" id="profileModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">👤</span>
+          <h3>Mi Perfil en Tok Tok</h3>
+        </div>
+        <button class="modal-close-btn" id="closeProfileModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="editProfileForm">
+          <div class="profile-preview-card creator-profile-card">
+            <div class="avatar-disc creator-avatar-glow" style="width: 60px; height: 60px; background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);">
+              <div class="avatar-inner-img" id="profileModalAvatar" style="color: #000; font-weight: 900; font-size: 20px;">DYR</div>
+            </div>
+            <div class="profile-preview-meta">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong id="profileModalDisplayName" style="font-size: 17px; color: #fff;">DYR</strong>
+                <span class="badge-role-creator" id="profileModalRoleBadge">👑 CREADOR OFICIAL</span>
+              </div>
+              <span class="profile-modal-user" id="profileModalHandle">@dyr</span>
+              <span class="creator-status-desc">Fundador Supremo de TokRoom • Monedas Infinitas 🪙</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label for="profileNameInput">Tu Nombre en Pantalla:</label>
+            <input type="text" id="profileNameInput" class="form-input" value="DYR" maxlength="30" required />
+          </div>
+
+          <div class="form-group">
+            <label for="profileHandleInput">Tu Usuario (@):</label>
+            <input type="text" id="profileHandleInput" class="form-input" value="dyr" maxlength="20" required />
+          </div>
+
+          <div class="form-group">
+            <label>Correo Electrónico Oficial del Creador:</label>
+            <div class="verified-email-display" style="border: 1px solid rgba(255, 215, 0, 0.4); background: rgba(255, 215, 0, 0.08);">
+              <span id="profileModalEmail" style="color: #ffd700; font-weight: 700;">davidyrosa1979@gmail.com</span>
+              <span class="badge-verified" style="background: rgba(255, 215, 0, 0.2); color: #ffd700;">👑 Verificado (Creador)</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Saldo de Monedas VIP:</label>
+            <div class="verified-email-display" style="background: rgba(37, 244, 238, 0.08); border: 1px solid rgba(37, 244, 238, 0.3);">
+              <span style="color: #25f4ee; font-weight: 700; font-size: 14px;">🪙 Monedas Ilimitadas (Modo Creador Activo)</span>
+              <span class="badge-verified" style="background: rgba(37, 244, 238, 0.2); color: #25f4ee;">∞ Sin Límite</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary-action" style="margin-top: 12px;">Guardar Cambios</button>
+
+          <div class="profile-extra-actions" style="margin-top: 16px; border-top: 1px solid var(--border-glass); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; color: var(--text-muted);">¿Registrarte con otro correo?</span>
+            <button type="button" class="btn-text-action" id="resetAccountBtn" style="color: var(--tok-pink); font-size: 12px; font-weight: 700; background: none; border: none; cursor: pointer;">
+              🔄 Cerrar Sesión / Nuevo Registro
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cajón de Regalos INTERACTIVE -->
+  <div class="gift-drawer" id="giftDrawer">
+    <div class="gift-drawer-header">
+      <div class="gift-drawer-title">
+        <span id="giftDrawerTitleText">🎁 Regalos de Tok Tok</span>
+        <span class="coin-balance">🪙 Saldo: <strong id="userCoins">1,500</strong> Monedas</span>
+      </div>
+      <button class="close-drawer-btn" id="closeGiftDrawerBtn">&times;</button>
+    </div>
+    <!-- Barra de Destinatario del Regalo Seleccionado -->
+    <div class="gift-target-recipient-bar" id="giftTargetRecipientBar" style="display: none; background: rgba(254, 44, 85, 0.15); border: 1px solid rgba(254, 44, 85, 0.35); border-radius: 8px; margin: 10px 16px 4px 16px; padding: 8px 12px; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">🎯</span>
+        <span style="font-size: 13px; color: #fff;">Enviar regalo a: <strong id="giftTargetRecipientName" style="color: #fe2c55;">Rosa</strong></span>
+      </div>
+      <button type="button" id="btnClearGiftTargetRecipient" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; cursor: pointer;">
+        A Toda la Sala
+      </button>
+    </div>
+    <div class="gift-grid" id="giftListGrid">
+      <!-- Generado dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Modal: Filtros de Cámara / Efectos Tok Tok -->
+  <div class="modal-backdrop" id="effectsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">✨</span>
+          <h3>Filtros & Estilos Tok Tok</h3>
+        </div>
+        <button class="modal-close-btn" id="closeEffectsModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="effects-grid" id="effectsGrid">
+          <button class="filter-choice-btn active" data-filter="none">
+            <span class="filter-icon">🚫</span>
+            <span>Normal</span>
+          </button>
+          <button class="filter-choice-btn" data-filter="glow">
+            <span class="filter-icon">🌟</span>
+            <span>Tok Glow</span>
+          </button>
+          <button class="filter-choice-btn" data-filter="cyberpunk">
+            <span class="filter-icon">🔮</span>
+            <span>Neón Cyber</span>
+          </button>
+          <button class="filter-choice-btn" data-filter="retro">
+            <span class="filter-icon">📼</span>
+            <span>Vintage 90s</span>
+          </button>
+          <button class="filter-choice-btn" data-filter="golden">
+            <span class="filter-icon">✨</span>
+            <span>Golden Hour</span>
+          </button>
+          <button class="filter-choice-btn" data-filter="bw">
+            <span class="filter-icon">🎬</span>
+            <span>Cinema B&W</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Descargar e Instalar Tok Tok en el Móvil (PWA & APK) -->
+  <div class="modal-backdrop" id="downloadModal">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">📲</span>
+          <div>
+            <h3>Descargar Tok Tok v1.1 Beta 1 <span style="font-size: 13px; color: #fe2c55; border: 1px solid #fe2c55; padding: 1px 6px; border-radius: 4px; vertical-align: middle;">+18</span></h3>
+            <span class="modal-subtitle">Tok Tok Versión 1.1 Beta 1 • Exclusivo para mayores de 18 años</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeDownloadModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="download-options-grid">
+          
+          <div class="dl-step-banner" style="grid-column: 1 / -1; background: rgba(37, 244, 238, 0.08); border: 1px solid rgba(37, 244, 238, 0.3); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <span style="font-size: 24px;">🔞</span>
+            <div style="font-size: 12px; line-height: 1.4;">
+              <strong style="color: #fe2c55; display: block; font-size: 13px;">Aplicación para Mayores de 18 Años (+18) • v1.1 Beta 1:</strong>
+              Al abrir Tok Tok en tu móvil, la aplicación te solicitará tu <strong>registro con un correo electrónico válido</strong> para identificarte en el escenario en vivo y proteger la sala contra lenguaje inapropiado.
+            </div>
+          </div>
+
+          <!-- Opción 1: Instalación Directa PWA -->
+          <div class="download-card">
+            <div class="dl-badge-recommend">RECOMENDADO • INSTANTÁNEO</div>
+            <div class="dl-icon-header">
+              <span class="dl-icon-phone">📱</span>
+              <h4>Instalar App en el Teléfono</h4>
+            </div>
+            <p class="dl-desc">
+              Instala <strong>Tok Tok v1.1 Beta 1</strong> directamente en tu pantalla de inicio como una aplicación nativa (sin barras de navegador) en Android o iPhone.
+            </p>
+
+            <button class="btn-primary-action" id="triggerPwaInstallBtn">
+              ⬇️ Instalar Tok Tok en este dispositivo
+            </button>
+
+            <div class="mobile-instructions-box">
+              <div class="inst-row" style="background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                <span class="inst-os" style="font-size: 15px; font-weight: 800; color: #00f2fe; display: block; margin-bottom: 4px;">🍏 Para iPhone (iOS / Safari):</span>
+                <span style="font-size: 13px; line-height: 1.5; color: #e2e8f0;">
+                  Abre el enlace en <strong>Safari</strong>, pulsa el botón <strong>Compartir (icono cuadrado con flecha hacia arriba)</strong> y selecciona <strong>"Añadir a pantalla de inicio"</strong>. La aplicación se instalará como app nativa a pantalla completa con acceso directo a micrófono y cámara.
+                </span>
+              </div>
+              <div class="inst-row" style="background: rgba(37, 244, 238, 0.08); border: 1px solid rgba(37, 244, 238, 0.25); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                <span class="inst-os" style="font-size: 15px; font-weight: 800; color: #25f4ee; display: block; margin-bottom: 4px;">🤖 Para Móviles Android:</span>
+                <span style="font-size: 13px; line-height: 1.5; color: #e2e8f0;">
+                  Puedes instalar la app web directamente desde Chrome pulsando <strong>"Instalar aplicación"</strong> o descargar el archivo instalable <strong>APK directo</strong>:
+                </span>
+                <div style="margin-top: 10px;">
+                  <a href="/toktok.apk" download="toktok-v1.2.1.apk" class="btn-primary-action" id="directApkDownloadBtn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 10px 18px; font-size: 13px; font-weight: 700;">
+                    <span>📦 Descargar Tok Tok v1.2.1 (.apk)</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opción 2: Compartir Enlace para que tus amigos se conecten -->
+          <div class="download-card">
+            <div class="dl-icon-header">
+              <span class="dl-icon-phone">🔗</span>
+              <h4>Enviar a Amigos / Familiares (WhatsApp)</h4>
+            </div>
+            <p class="dl-desc">
+              Envía este enlace por WhatsApp. Al abrirlo en su teléfono (iPhone o Android), entrarán directamente a tu sala en vivo sin pantallas de aviso ni bloqueos.
+            </p>
+
+            <div class="invite-link-box">
+              <input type="text" readonly value="https://legitimate-proteins-pci-loaded.trycloudflare.com" id="mobileDirectUrlInput" class="share-input">
+              <button class="btn-copy" id="copyMobileDirectUrlBtn">Copiar</button>
+            </div>
+
+            <div class="share-buttons-row">
+              <a href="https://api.whatsapp.com/send?text=¡Únete%20a%20mi%20sala%20en%20vivo%20en%20TokRoom!%20Entra%20directamente%20desde%20aquí:%20https://legitimate-proteins-pci-loaded.trycloudflare.com" target="_blank" class="btn-whatsapp-share" id="whatsappShareBtn">
+                💬 Enviar Invitación por WhatsApp
+              </a>
+            </div>
+
+            <div class="apk-notice-box" style="margin-top: 14px;">
+              <strong>💡 Conexión Directa Segura Cifrada (SSL)</strong>
+              <p>Túnel Cloudflare activo sin pantallas intermedias ni expiración por inactividad. Compatible al 100% con WhatsApp in-app browser y Safari de iPhone.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Menú de Control y Moderación del Anfitrión -->
+  <div class="modal-backdrop" id="hostControlModal">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">🛡️</span>
+          <div>
+            <h3>Panel de Control del Anfitrión</h3>
+            <span class="modal-subtitle">Control total y moderación en tiempo real de la sala Tok Tok</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeHostControlModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Acciones Globales de la Sala -->
+        <div class="mod-section-card">
+          <span class="mod-section-title">Controles Globales de la Sala</span>
+          <div class="mod-quick-grid">
+            <button class="btn-mod-action" id="hostMuteAllBtn">
+              <span class="mod-icon">🔇</span>
+              <span>Silenciar a Todos</span>
+            </button>
+            <button class="btn-mod-action" id="hostDisableAllCamsBtn">
+              <span class="mod-icon">📷</span>
+              <span>Apagar Todas las Cámaras</span>
+            </button>
+            <button class="btn-mod-action" id="hostToggleLockRoomBtn">
+              <span class="mod-icon" id="lockRoomIcon">🔓</span>
+              <span id="lockRoomLabel">Bloquear Sala (Privada)</span>
+            </button>
+            <button class="btn-mod-action" id="hostToggleChatBtn">
+              <span class="mod-icon" id="chatModIcon">💬</span>
+              <span id="chatModLabel">Pausar Chat en Vivo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sección de Gestión de Moderadores de la Sala (NUEVO) -->
+        <div class="mod-section-card mod-moderators-card">
+          <div class="mod-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <span class="mod-section-title">🛡️ Equipo de Moderadores Oficiales (<span id="modModeratorCount">0</span>)</span>
+              <span class="mod-hint" style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                Tienen autoridad para silenciar micrófonos, borrar comentarios ofensivos y expulsar infractores
+              </span>
+            </div>
+            <button type="button" class="btn-primary-action" id="openAddModModalBtn" style="padding: 7px 14px; font-size: 12px; font-weight: 700; border-radius: 9999px; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000;">
+              <span>➕ Nombrar Moderador</span>
+            </button>
+          </div>
+          <div class="moderators-list" id="hostControlModeratorsList">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Moderación de Invitados en Escenario -->
+        <div class="mod-section-card">
+          <div class="mod-section-header">
+            <span class="mod-section-title">Participantes en Escenario (<span id="modGuestCount">0</span>/15)</span>
+            <span class="mod-hint">El anfitrión puede silenciar o expulsar a cualquier persona</span>
+          </div>
+          <div class="mod-guests-list" id="hostControlGuestsList">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Sección de Expulsión y Eliminación Definitiva de Usuarios Registrados -->
+        <div class="mod-section-card" style="border: 1px solid rgba(254, 44, 85, 0.4); background: rgba(254, 44, 85, 0.05);">
+          <div class="mod-section-header">
+            <div>
+              <span class="mod-section-title" style="color: #fe2c55;">🗑️ Eliminar y Expulsar Usuarios Registrados</span>
+              <span class="mod-hint" style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                Permite al Anfitrión eliminar permanentemente a cualquier usuario de la aplicación. Se cerrará su sesión de inmediato y no podrá volver a ingresar.
+              </span>
+            </div>
+          </div>
+          <div class="mod-registered-delete-list" id="hostControlRegisteredUsersList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Desbloquear y Restaurar Acceso a Cuentas (por Correo o Usuario) -->
+        <div class="mod-section-card" style="border: 1px solid rgba(0, 230, 118, 0.4); background: rgba(0, 230, 118, 0.05); border-radius: 12px; padding: 14px; margin-top: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span class="mod-section-title" style="color: #00e676; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              🔓 Desbloquear y Restaurar Acceso a Cuentas
+            </span>
+            <span class="badge" style="background: rgba(0, 230, 118, 0.2); color: #00e676; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Exclusivo Host</span>
+          </div>
+          <span class="mod-hint" style="display: block; font-size: 11.5px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.4;">
+            Si expulsaste o eliminaste una cuenta, introduce su correo o pulsa en la lista de abajo para <strong>quitar el bloqueo de inmediato</strong> y restaurar su acceso a la aplicación.
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="unbanEmailInput" placeholder="Escribe el correo (ej: usuario@gmail.com) o @usuario" class="form-input" style="flex: 1; font-size: 13px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 230, 118, 0.3); color: #fff; padding: 8px 12px; border-radius: 8px;" />
+            <button type="button" id="btnUnbanEmailSubmit" style="background: #00e676; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,230,118,0.3);">
+              🟢 Desbloquear
+            </button>
+          </div>
+          <div id="expelledUsersListContainer" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinámico de cuentas expulsadas con botón 1-click -->
+          </div>
+        </div>
+
+        <!-- Lista de Usuarios Baneados / Bloqueados -->
+        <div class="mod-section-card">
+          <span class="mod-section-title">Usuarios Baneados / Bloqueados de la Sala (<span id="modBannedCount">0</span>)</span>
+          <div class="banned-users-list" id="bannedUsersList">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: NOMBRAR NUEVO MODERADOR (NUEVO) -->
+  <div class="modal-backdrop" id="addModeratorModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">🛡️</span>
+          <div>
+            <h3>Nombrar Moderador de la Sala</h3>
+            <span class="modal-subtitle">Asigna a una persona de confianza para mantener el orden y respeto</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeAddModModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="selectModCandidate">Seleccionar Usuario de la Sala o Comunidad:</label>
+          <select id="selectModCandidate" class="form-input" style="background: var(--bg-surface-elevated); color: #fff;">
+            <!-- Rellenado dinámicamente con usuarios registrados -->
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="customModInput">O escribe el nombre o usuario (@) manualmente:</label>
+          <input type="text" id="customModInput" class="form-input" placeholder="Ej: @marcos_dj o Sofia" />
+        </div>
+
+        <div class="mod-powers-box" style="background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 12px; padding: 12px; margin: 14px 0;">
+          <strong style="color: var(--tok-cyan); font-size: 13px; display: block; margin-bottom: 6px;">🛡️ Poderes otorgados al Moderador:</strong>
+          <ul style="font-size: 12px; line-height: 1.6; color: #cbd5e1; padding-left: 18px; margin: 0;">
+            <li>Silenciar micrófonos de participantes en vivo en cualquier momento.</li>
+            <li>Bloquear y expulsar a personas que escriban comentarios inadecuados o soeces.</li>
+            <li>Distintivo oficial <strong>🛡️ MOD</strong> visible junto a su nombre en el chat y escenario.</li>
+          </ul>
+        </div>
+
+        <button type="button" class="btn-primary-action" id="btnConfirmAddMod" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-weight: 800;">
+          🛡️ Nombrar como Moderador Oficial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submenú Contextual Flotante de Usuario en el Chat (NUEVO) -->
+  <div class="chat-context-menu" id="chatUserContextMenu" style="display: none;">
+    <div class="ctx-user-header">
+      <div class="ctx-avatar" id="ctxUserAvatar">👤</div>
+      <div class="ctx-user-meta">
+        <strong id="ctxUserName">Nombre Usuario</strong>
+        <span id="ctxUserHandle">@usuario</span>
+        <span class="ctx-role-badge" id="ctxUserRoleBadge">USUARIO</span>
+      </div>
+      <button class="ctx-close-btn" id="closeCtxMenuBtn">&times;</button>
+    </div>
+
+    <div class="ctx-action-list">
+      <button class="ctx-action-btn" id="ctxActionPrivateMsg">
+        <span class="ctx-icon">💬</span>
+        <div class="ctx-btn-text">
+          <strong>Mandar Mensaje Privado</strong>
+          <span>Abrir chat directo 1 a 1</span>
+        </div>
+      </button>
+
+      <button class="ctx-action-btn" id="ctxActionReply">
+        <span class="ctx-icon">↩️</span>
+        <div class="ctx-btn-text">
+          <strong>Responder en el Chat</strong>
+          <span>Mencionar con @ para responderle</span>
+        </div>
+      </button>
+
+      <!-- Opciones para Creador (DYR) o Moderadores -->
+      <div class="ctx-mod-divider">
+        <span>ACCIONES DE MODERACIÓN</span>
+      </div>
+
+      <button class="ctx-action-btn" id="ctxActionToggleMod">
+        <span class="ctx-icon">🛡️</span>
+        <div class="ctx-btn-text">
+          <strong id="ctxToggleModTitle">Hacer Moderador</strong>
+          <span id="ctxToggleModDesc">Otorgar poderes de moderación</span>
+        </div>
+      </button>
+
+      <button class="ctx-action-btn" id="ctxActionMute">
+        <span class="ctx-icon">🔇</span>
+        <div class="ctx-btn-text">
+          <strong>Silenciar Micrófono</strong>
+          <span>Silenciar a este participante</span>
+        </div>
+      </button>
+
+      <button class="ctx-action-btn ctx-btn-danger" id="ctxActionBan">
+        <span class="ctx-icon">🚫</span>
+        <div class="ctx-btn-text">
+          <strong>Bloquear / Expulsar</strong>
+          <span>Por comentario inadecuado o falta</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: MENSAJES PRIVADOS / DIRECTOS (DM) (NUEVO) -->
+  <div class="modal-backdrop" id="privateMessageModal">
+    <div class="modal-card modal-dm-card">
+      <div class="modal-header dm-header">
+        <div class="dm-recipient-box">
+          <div class="dm-recipient-avatar" id="dmRecipientAvatar">👤</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 id="dmRecipientName" style="font-size: 16px; margin: 0;">Usuario</h3>
+              <span class="online-indicator-dot"></span>
+            </div>
+            <span class="dm-recipient-handle" id="dmRecipientHandle">@usuario • En línea</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closePrivateMessageModalBtn">&times;</button>
+      </div>
+
+      <div class="dm-chat-body" id="dmChatMessages">
+        <!-- Burbujas de mensajes privados -->
+      </div>
+
+      <form id="dmChatForm" class="dm-chat-form">
+        <input 
+          type="text" 
+          id="dmChatInput" 
+          class="dm-input-field" 
+          placeholder="Escribe un mensaje privado aquí..." 
+          autocomplete="off" 
+          required 
+        />
+        <button type="submit" class="btn-primary-action btn-dm-send" id="btnSendDm">
+          <span>Enviar 🚀</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Normas de la Comunidad Tok Tok -->
+  <div class="modal-backdrop" id="rulesModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">📜</span>
+          <div>
+            <h3>Normas de la Comunidad Tok Tok</h3>
+            <span class="modal-subtitle">Directrices obligatorias para participar en las salas en vivo</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeRulesModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="community-rules-list">
+          <div class="rule-item-box">
+            <span class="rule-badge">NORMA 1</span>
+            <div class="rule-text-content">
+              <strong>📧 Correo Electrónico Verificado Obligatorio</strong>
+              <p>Todo participante debe registrarse con un correo electrónico válido para asegurar la identidad y seguridad en la sala.</p>
+            </div>
+          </div>
+
+          <div class="rule-item-box highlight-rule">
+            <span class="rule-badge badge-danger">NORMA 2</span>
+            <div class="rule-text-content">
+              <strong>🚫 Prohibición Estricta de Palabras Soeces e Insultos</strong>
+              <p>Queda totalmente prohibido el uso de lenguaje vulgar, insultos, palabras soeces o contenido ofensivo en nombres, biografías y mensajes de chat. Las cuentas infractoras serán bloqueadas automáticamente.</p>
+            </div>
+          </div>
+
+          <div class="rule-item-box">
+            <span class="rule-badge">NORMA 3</span>
+            <div class="rule-text-content">
+              <strong>🛡️ Autoridad Total del Anfitrión</strong>
+              <p>El anfitrión dispone de un panel de moderación con facultades para silenciar micrófonos, apagar cámaras, expulsar de los 15 asientos o banear permanentemente a cualquier usuario.</p>
+            </div>
+          </div>
+
+          <div class="rule-item-box">
+            <span class="rule-badge">NORMA 4</span>
+            <div class="rule-text-content">
+              <strong>🎥 Respeto en Cámara y Micrófono</strong>
+              <p>Los 15 invitados deben respetar el turno de palabra y mantener una conducta cordial y apropiada durante la videollamada.</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary-action" id="acceptRulesBtn" style="margin-top: 16px;">
+          Entendido y Acepto las Normas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Explorador de Salas en Vivo (Multi-Sala) -->
+  <div class="modal-backdrop" id="roomsListModal">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">🏠</span>
+          <div>
+            <h3>Salas en Vivo Tok Tok</h3>
+            <span class="modal-subtitle">Explora salas activas o crea tu propia sala independiente</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeRoomsModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 13px; color: var(--text-secondary);">Salas transmitiendo en este momento:</span>
+          <button class="btn-primary-action" id="btnOpenCreateFromList" style="padding: 8px 16px; font-size: 12px; width: auto; margin: 0; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #000; font-weight: 800;">
+            ➕ Crear Mi Propia Sala
+          </button>
+        </div>
+
+        <div class="rooms-list-grid" id="roomsListGridContainer">
+          <!-- Renderizado dinámico de salas -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Crear Nueva Sala Independiente -->
+  <div class="modal-backdrop" id="createRoomModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">➕</span>
+          <div>
+            <h3>Crear Sala en Vivo</h3>
+            <span class="modal-subtitle">Abre tu propia sala independiente como Anfitrión</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeCreateRoomModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="create-room-info-box" style="background: rgba(37, 244, 238, 0.08); border: 1px solid rgba(37, 244, 238, 0.25); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; line-height: 1.5; color: #cbd5e1;">
+          👑 <strong>Tú serás el Anfitrión de tu sala:</strong> Tendrás tu propio escenario para 15 amigos, tu propio chat independiente y moderación completa. David y otros usuarios pueden estar en sus salas sin cruzarse con la tuya.
+        </div>
+
+        <form id="createRoomForm">
+          <div class="form-group">
+            <label for="newRoomNameInput">Nombre de tu Sala:</label>
+            <input 
+              type="text" 
+              id="newRoomNameInput" 
+              class="form-input" 
+              placeholder="Ej: Sala de Rosa y Amigas o Charla de Noche" 
+              maxlength="45" 
+              required 
+            />
+          </div>
+
+          <button type="submit" class="btn-primary-action" id="btnSubmitCreateRoom" style="margin-top: 14px; background: linear-gradient(135deg, #fe2c55 0%, #ff5277 100%); font-weight: 800;">
+            🚀 Abrir Mi Sala y Comenzar Transmisión
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón Flotante de Moderación ocultado (ahora integrado en el dock al lado del micrófono) -->
+  <button class="floating-host-mod-fab" id="floatingHostModFab" style="display: none !important;" title="Abrir panel de control y moderación del anfitrión">
+    <span>🛡️</span>
+    <span>Moderación (HOST)</span>
+  </button>
+
+  <script src="app.js?v=22"></script>
+</body>
+</html>

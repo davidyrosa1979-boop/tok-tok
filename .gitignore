@@ -1,0 +1,9 @@
+node_modules/
+mingit/
+.gradle/
+build/
+android-build/
+cloudflared.exe
+*.apk
+*.zip
+.system_generated/

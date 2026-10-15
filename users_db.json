@@ -1,0 +1,44 @@
+[
+  {
+    "id": "user_dyr_creator",
+    "name": "DYR",
+    "handle": "dyr",
+    "email": "davidyrosa1979@gmail.com",
+    "role": "creator",
+    "isCreator": true,
+    "isHost": true,
+    "hasInfiniteCoins": true,
+    "coins": 999999999,
+    "bio": "👑 Fundador Supremo y Creador Oficial de TokRoom en Vivo",
+    "avatarBg": "linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)",
+    "registeredAt": "2026-10-15T00:00:00.000Z"
+  },
+  {
+    "id": "user_rosa_guest",
+    "name": "Rosa y David",
+    "handle": "rosaydavid",
+    "email": "rosaydavid1979@gmail.com",
+    "role": "vip",
+    "isCreator": false,
+    "isHost": false,
+    "hasInfiniteCoins": true,
+    "coins": 999999999,
+    "bio": "🌸 Rosa y David • VIP Oficial con Monedas Infinitas 🪙",
+    "avatarBg": "#fe2c55",
+    "registeredAt": "2026-10-15T00:00:00.000Z"
+  },
+  {
+    "id": "user_rosa_alias",
+    "name": "Rosa y David",
+    "handle": "rosaydavid",
+    "email": "rosa@tokroom.live",
+    "role": "vip",
+    "isCreator": false,
+    "isHost": false,
+    "hasInfiniteCoins": true,
+    "coins": 999999999,
+    "bio": "🌸 Rosa y David • VIP Oficial",
+    "avatarBg": "#fe2c55",
+    "registeredAt": "2026-10-15T00:00:00.000Z"
+  }
+]
