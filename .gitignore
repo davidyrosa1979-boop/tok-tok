@@ -4,6 +4,5 @@ mingit/
 build/
 android-build/
 cloudflared.exe
-*.apk
 *.zip
 .system_generated/
