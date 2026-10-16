@@ -63,6 +63,7 @@ const TokTokState = {
   gifts: [
     { id: "rose", name: "Rosa Tok", icon: "🌹", cost: 1, soundType: "pop" },
     { id: "heart_me", name: "Corazón Me", icon: "💖", cost: 10, soundType: "chime" },
+    { id: "glove", name: "Manopla Batalla", icon: "🥊", cost: 25, soundType: "pop" },
     { id: "fire", name: "Fuego Pro", icon: "🔥", cost: 50, soundType: "fanfare" },
     { id: "disco", name: "Bola Disco", icon: "🪩", cost: 199, soundType: "disco" },
     { id: "rocket", name: "Cohete VIP", icon: "🚀", cost: 599, soundType: "rocket" },
@@ -871,9 +872,10 @@ function createOccupiedSeatElement(guest, seatIndex) {
         <span style="font-size: 11px; color: var(--text-muted);">Cámara Apagada</span>
       </div>
       <div class="slot-badge-bar">
-        <span class="slot-name-tag">
+        <span class="slot-name-tag interactive-stage-user" style="cursor: pointer;" title="Haz clic para enviar regalo o interactuar con ${guest.name}">
           ${isMod ? '<span class="chat-badge-mod" style="font-size: 8px;">🛡️ MOD</span>' : '<span style="color: var(--tok-cyan);">● #' + (seatIndex + 1) + '</span>'}
           <span>${guest.name}</span>
+          <span style="font-size: 11px; margin-left: 2px;" title="Mandar regalo">🎁</span>
         </span>
         <div class="slot-status-icons">
           <div class="mic-badge ${guest.micOn ? '' : 'muted'}" id="micBadge-${seatIndex}">
@@ -882,6 +884,14 @@ function createOccupiedSeatElement(guest, seatIndex) {
         </div>
       </div>
     `;
+
+    const nameTag = slot.querySelector(".interactive-stage-user");
+    if (nameTag) {
+      nameTag.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openChatUserContextMenu(guest.name, guest.handle || `@${guest.name.toLowerCase()}`, "", e);
+      });
+    }
 
     const existingStream = remoteStreams.get(guest.id);
     if (existingStream) {
@@ -1825,6 +1835,11 @@ function sendGift(gift) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(giftPayload)
   }).catch(() => {});
+
+  // Resetear destinatario activo para los siguientes envíos generales
+  TokTokState.targetGiftRecipient = null;
+  const targetBar = document.getElementById("giftTargetRecipientBar");
+  if (targetBar) targetBar.style.display = "none";
 }
 
 function showVipGiftAnnouncement(senderName, gift, targetName) {
@@ -1980,7 +1995,19 @@ function openChatUserContextMenu(name, handle, text, event) {
   const menu = document.getElementById("chatUserContextMenu");
   if (!menu) return;
 
-  activeCtxUser = { name, handle, text };
+  const cleanName = name.replace('@', '').trim();
+  const cleanHandle = handle ? (handle.startsWith('@') ? handle : `@${handle}`) : `@${cleanName.toLowerCase()}`;
+  const isCreator = cleanName.toUpperCase() === "DYR" || (cleanName === TokTokState.localUser.name && TokTokState.localUser.isCreator);
+  const isMod = !isCreator && (isUserModerator(cleanName) || isUserModerator(cleanHandle));
+
+  let resolvedId = null;
+  const regUser = TokTokState.registeredUsers.find(u => 
+    (u.name && u.name.toLowerCase() === cleanName.toLowerCase()) || 
+    (u.handle && u.handle.toLowerCase().replace('@', '') === cleanName.toLowerCase().replace('@', ''))
+  );
+  if (regUser) resolvedId = regUser.id;
+
+  activeCtxUser = { id: resolvedId, name: cleanName, handle: cleanHandle, text };
 
   const avatarEl = document.getElementById("ctxUserAvatar");
   const nameEl = document.getElementById("ctxUserName");
@@ -1989,12 +2016,8 @@ function openChatUserContextMenu(name, handle, text, event) {
   const toggleModTitle = document.getElementById("ctxToggleModTitle");
   const toggleModDesc = document.getElementById("ctxToggleModDesc");
 
-  const cleanName = name.replace('@', '').trim();
-  const isCreator = cleanName.toUpperCase() === "DYR" || (cleanName === TokTokState.localUser.name && TokTokState.localUser.isCreator);
-  const isMod = !isCreator && (isUserModerator(cleanName) || isUserModerator(handle));
-
   if (nameEl) nameEl.textContent = cleanName;
-  if (handleEl) handleEl.textContent = handle;
+  if (handleEl) handleEl.textContent = cleanHandle;
   if (avatarEl) {
     avatarEl.textContent = isCreator ? "👑" : cleanName.substring(0, 2).toUpperCase();
     avatarEl.style.background = isCreator ? "linear-gradient(135deg, #ffd700, #ff8c00)" : (isMod ? "linear-gradient(135deg, #00f2fe, #4facfe)" : "#25f4ee");
@@ -2027,10 +2050,10 @@ function openChatUserContextMenu(name, handle, text, event) {
   }
 
   // Posicionamiento inteligente
-  const menuWidth = 260;
-  const menuHeight = 280;
-  let posX = event.clientX || (window.innerWidth / 2 - 130);
-  let posY = event.clientY || (window.innerHeight / 2 - 140);
+  const menuWidth = 270;
+  const menuHeight = 440;
+  let posX = event.clientX || (window.innerWidth / 2 - 135);
+  let posY = event.clientY || (window.innerHeight / 2 - 220);
 
   if (posX + menuWidth > window.innerWidth) {
     posX = window.innerWidth - menuWidth - 14;
@@ -3050,6 +3073,36 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Mandar Regalo: Abrir catálogo completo targeting al usuario seleccionado
+  const ctxSendGift = document.getElementById("ctxActionSendGift");
+  if (ctxSendGift) {
+    ctxSendGift.addEventListener("click", () => {
+      const targetUser = activeCtxUser;
+      closeChatUserContextMenu();
+      if (targetUser) {
+        openGiftDrawerForUser(targetUser);
+      }
+    });
+  }
+
+  // Regalos Rápidos en 1 Clic (Corazón, Fuego, Manopla, Rosa, Cohete)
+  document.querySelectorAll(".ctx-quick-gift-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const giftId = btn.dataset.giftId;
+      const targetUser = activeCtxUser;
+      closeChatUserContextMenu();
+
+      if (!targetUser) return;
+      const gift = TokTokState.gifts.find(g => g.id === giftId);
+      if (!gift) return;
+
+      // Asignar el destinatario del regalo a la persona sobre la que se abrió el menú
+      TokTokState.targetGiftRecipient = targetUser;
+      sendGift(gift);
+    });
+  });
 
   const ctxToggleMod = document.getElementById("ctxActionToggleMod");
   if (ctxToggleMod) {
