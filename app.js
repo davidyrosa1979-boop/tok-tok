@@ -2073,10 +2073,128 @@ function closeChatUserContextMenu() {
 }
 
 // ===================================================================
-// SISTEMA DE MENSAJES PRIVADOS / DIRECTOS (DM)
+// SISTEMA DE MENSAJES PRIVADOS / DIRECTOS (DM) Y BANDEJA DE ENTRADA
 // ===================================================================
 let currentDmRecipient = null;
+let currentInboxThreads = [];
 const dmConversationHistory = {};
+
+// Cargar o sincronizar la Bandeja de Entrada desde el servidor
+function loadDmInbox(filterQuery = "") {
+  const myHandle = (TokTokState.localUser && TokTokState.localUser.handle) 
+    ? TokTokState.localUser.handle.replace(/^@/, '').toLowerCase().trim() 
+    : "dyr";
+
+  fetch(`/api/dm/inbox?user=${encodeURIComponent(myHandle)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.ok) {
+        currentInboxThreads = data.threads || [];
+        updateDmUnreadBadges(data.totalUnread || 0);
+        renderInboxThreads(filterQuery);
+      }
+    })
+    .catch(() => {
+      renderInboxThreads(filterQuery);
+    });
+}
+
+function updateDmUnreadBadges(count) {
+  const headerBadge = document.getElementById("dmHeaderUnreadBadge");
+  const dockBadge = document.getElementById("dmDockUnreadBadge");
+
+  [headerBadge, dockBadge].forEach(b => {
+    if (b) {
+      if (count > 0) {
+        b.textContent = count > 99 ? "99+" : count;
+        b.style.display = "inline-flex";
+      } else {
+        b.style.display = "none";
+      }
+    }
+  });
+}
+
+function renderInboxThreads(filterQuery = "") {
+  const container = document.getElementById("inboxThreadsList");
+  const emptyState = document.getElementById("inboxEmptyState");
+  if (!container) return;
+
+  const q = filterQuery.toLowerCase().trim();
+  const filtered = currentInboxThreads.filter(t => {
+    if (!q) return true;
+    const name = (t.otherUser && t.otherUser.name) ? t.otherUser.name.toLowerCase() : "";
+    const handle = (t.otherUser && t.otherUser.handle) ? t.otherUser.handle.toLowerCase() : "";
+    return name.includes(q) || handle.includes(q);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+
+  container.innerHTML = filtered.map(t => {
+    const u = t.otherUser || {};
+    const cleanName = (u.name || "Usuario").replace('@', '').trim();
+    const isCreator = cleanName.toUpperCase() === "DYR" || u.isCreator;
+    const isMod = !isCreator && isUserModerator(u.handle);
+    const initial = isCreator ? "👑" : cleanName.substring(0, 2).toUpperCase();
+    const bg = isCreator ? "linear-gradient(135deg, #ffd700, #ff8c00)" : (u.avatarBg || (isMod ? "linear-gradient(135deg, #00f2fe, #4facfe)" : "#25f4ee"));
+    const lastMsg = t.lastMessage || {};
+    const myH = (TokTokState.localUser.handle || '').toLowerCase().replace(/^@/, '');
+    const isMe = (lastMsg.senderHandle || '').toLowerCase().replace(/^@/, '') === myH;
+    const prefix = isMe ? "Tú: " : "";
+    const snippet = (lastMsg.text || "").slice(0, 48);
+    const hasUnread = (t.unreadCount || 0) > 0;
+    
+    let timeStr = "";
+    if (lastMsg.timestamp) {
+      const d = new Date(lastMsg.timestamp);
+      timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    return `
+      <div class="inbox-thread-item ${hasUnread ? 'has-unread' : ''}" data-handle="${u.handle}">
+        <div class="inbox-thread-avatar" style="background: ${bg}; color: #000;">
+          ${initial}
+        </div>
+        <div class="inbox-thread-info">
+          <div class="inbox-thread-header">
+            <span class="inbox-thread-name">
+              ${cleanName}
+              ${isCreator ? '<span style="font-size: 11px;">👑</span>' : ''}
+              ${isMod ? '<span style="font-size: 9px; background: rgba(37,244,238,0.2); color: #25f4ee; padding: 1px 4px; border-radius: 4px;">MOD</span>' : ''}
+            </span>
+            <span class="inbox-thread-time">${timeStr}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span class="inbox-thread-snippet">${prefix}${snippet || 'Conversación activa'}</span>
+            ${hasUnread ? `<span class="inbox-unread-dot" title="${t.unreadCount} nuevo(s)"></span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.querySelectorAll(".inbox-thread-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const handle = item.dataset.handle;
+      const thread = currentInboxThreads.find(t => t.otherUser && t.otherUser.handle === handle);
+      if (thread && thread.otherUser) {
+        closeModal("inboxModal");
+        openPrivateChatWith(thread.otherUser);
+      }
+    });
+  });
+}
+
+function openInboxModal() {
+  loadDmInbox();
+  openModal("inboxModal");
+}
 
 function openPrivateChatWith(user) {
   currentDmRecipient = user;
@@ -2085,33 +2203,64 @@ function openPrivateChatWith(user) {
   const handleEl = document.getElementById("dmRecipientHandle");
   const inputEl = document.getElementById("dmChatInput");
 
-  const cleanName = user.name.replace('@', '').trim();
-  const isMod = isUserModerator(user.handle) || isUserModerator(cleanName);
+  const cleanName = (user.name || "Usuario").replace('@', '').trim();
+  const cleanHandle = user.handle ? (user.handle.startsWith('@') ? user.handle : `@${user.handle}`) : `@${cleanName.toLowerCase()}`;
+  const isCreator = cleanName.toUpperCase() === "DYR" || (cleanName === TokTokState.localUser.name && TokTokState.localUser.isCreator);
+  const isMod = !isCreator && (isUserModerator(user.handle) || isUserModerator(cleanName));
 
   if (avatarEl) {
-    avatarEl.textContent = cleanName.substring(0, 2).toUpperCase();
-    avatarEl.style.background = isMod ? "linear-gradient(135deg, #00f2fe, #4facfe)" : "var(--tok-cyan)";
+    avatarEl.textContent = isCreator ? "👑" : cleanName.substring(0, 2).toUpperCase();
+    avatarEl.style.background = isCreator ? "linear-gradient(135deg, #ffd700, #ff8c00)" : (isMod ? "linear-gradient(135deg, #00f2fe, #4facfe)" : (user.avatarBg || "var(--tok-cyan)"));
   }
   if (nameEl) nameEl.textContent = cleanName;
-  if (handleEl) handleEl.textContent = `${user.handle} • En línea 🟢`;
+  if (handleEl) handleEl.textContent = `${cleanHandle} • En línea 🟢`;
 
-  const threadKey = user.handle.toLowerCase();
-  if (!dmConversationHistory[threadKey]) {
-    dmConversationHistory[threadKey] = [
-      {
-        sender: "them",
-        text: `¡Hola ${TokTokState.localUser.name}! Un placer saludarte por privado. ¿De qué te gustaría hablar o en qué te puedo ayudar?`,
-        time: "Hace un momento"
-      }
-    ];
-  }
-
+  const threadKey = cleanHandle.toLowerCase().replace(/^@/, '');
+  
   renderDmMessages(threadKey);
   openModal("privateMessageModal");
   if (inputEl) {
     inputEl.value = "";
     setTimeout(() => inputEl.focus(), 300);
   }
+
+  const myHandle = (TokTokState.localUser && TokTokState.localUser.handle) 
+    ? TokTokState.localUser.handle.replace(/^@/, '').toLowerCase().trim() 
+    : "dyr";
+
+  fetch(`/api/dm/thread?user1=${encodeURIComponent(myHandle)}&user2=${encodeURIComponent(threadKey)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.ok && Array.isArray(data.messages)) {
+        dmConversationHistory[threadKey] = data.messages.map(m => {
+          const s = String(m.senderHandle || '').toLowerCase().replace(/^@/, '');
+          return {
+            sender: s === myHandle ? "me" : "them",
+            text: m.text,
+            time: new Date(m.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+        });
+
+        if (dmConversationHistory[threadKey].length === 0) {
+          dmConversationHistory[threadKey].push({
+            sender: "them",
+            text: `¡Hola ${TokTokState.localUser.name}! Un placer saludarte por privado. ¿En qué te puedo ayudar?`,
+            time: "Hace un momento"
+          });
+        }
+
+        renderDmMessages(threadKey);
+      }
+    })
+    .catch(() => {});
+
+  fetch("/api/dm/mark-read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ myHandle, otherHandle: threadKey })
+  }).then(() => {
+    loadDmInbox();
+  }).catch(() => {});
 }
 
 function renderDmMessages(threadKey) {
@@ -2136,38 +2285,40 @@ function handleSendDm(e) {
   const text = inputEl ? inputEl.value.trim() : "";
   if (!text) return;
 
-  const threadKey = currentDmRecipient.handle.toLowerCase();
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const threadKey = (currentDmRecipient.handle || '').toLowerCase().replace(/^@/, '');
+  const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (!dmConversationHistory[threadKey]) dmConversationHistory[threadKey] = [];
 
   dmConversationHistory[threadKey].push({
     sender: "me",
     text: text,
-    time: now
+    time: nowStr
   });
 
   inputEl.value = "";
   renderDmMessages(threadKey);
   playSoundFx("pop");
 
-  // Respuesta simulada inteligente reconociendo a DYR como Creador
-  setTimeout(() => {
-    const isDyr = TokTokState.localUser.name === "DYR" || TokTokState.localUser.isCreator;
-    const replies = [
-      `¡Genial ${TokTokState.localUser.name}! ${isDyr ? 'Qué honor hablar directamente con el Creador de TokRoom 🙌' : ''} Me parece perfecto lo que me comentas.`,
-      `¡Entendido perfectamente! Muchas gracias por escribirme por privado. La sala está genial 🔥`,
-      `¡De acuerdo! Cuenta conmigo para apoyar la sala, mantener el buen rollo y disfrutar del directo 👏`,
-      `¡Muchas gracias por estar tan atento a la comunidad! ¡Felicidades por esta app tan completa! 🚀`
-    ];
-    const replyText = replies[Math.floor(Math.random() * replies.length)];
+  const myHandle = (TokTokState.localUser && TokTokState.localUser.handle) 
+    ? TokTokState.localUser.handle.replace(/^@/, '').toLowerCase().trim() 
+    : "dyr";
 
-    dmConversationHistory[threadKey].push({
-      sender: "them",
-      text: replyText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-    renderDmMessages(threadKey);
-    playSoundFx("chime");
-  }, 1200);
+  fetch("/api/dm/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      senderId: TokTokState.localUser.id,
+      senderName: TokTokState.localUser.name,
+      senderHandle: myHandle,
+      recipientId: currentDmRecipient.id || "",
+      recipientName: currentDmRecipient.name,
+      recipientHandle: threadKey,
+      text: text
+    })
+  }).then(() => {
+    loadDmInbox();
+  }).catch(() => {});
 }
 
 // ===================================================================
@@ -3151,6 +3302,37 @@ function setupEventListeners() {
   if (dmForm) {
     dmForm.addEventListener("submit", handleSendDm);
   }
+
+  // Modal de Bandeja de Entrada (Inbox)
+  const openInboxHeaderBtn = document.getElementById("openInboxModalBtn");
+  if (openInboxHeaderBtn) {
+    openInboxHeaderBtn.addEventListener("click", openInboxModal);
+  }
+
+  const dockOpenInboxBtn = document.getElementById("dockOpenInboxBtn");
+  if (dockOpenInboxBtn) {
+    dockOpenInboxBtn.addEventListener("click", openInboxModal);
+  }
+
+  const closeInboxModalBtnEl = document.getElementById("closeInboxModalBtn");
+  if (closeInboxModalBtnEl) {
+    closeInboxModalBtnEl.addEventListener("click", () => closeModal("inboxModal"));
+  }
+
+  const btnBackToInbox = document.getElementById("btnBackToInboxFromDm");
+  if (btnBackToInbox) {
+    btnBackToInbox.addEventListener("click", () => {
+      closeModal("privateMessageModal");
+      openInboxModal();
+    });
+  }
+
+  const inboxSearchInp = document.getElementById("inboxSearchInput");
+  if (inboxSearchInp) {
+    inboxSearchInp.addEventListener("input", (e) => {
+      renderInboxThreads(e.target.value.trim());
+    });
+  }
 }
 
 function populateModCandidatesSelect() {
@@ -4020,6 +4202,13 @@ function initSseFallback() {
         handleRealtimeEvent("room_reset", d);
       } catch (_) {}
     });
+
+    sseSource.addEventListener("dm_received", (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        handleRealtimeEvent("dm_received", d);
+      } catch (_) {}
+    });
   } catch (_) {}
 }
 
@@ -4140,6 +4329,33 @@ function handleRealtimeEvent(type, data) {
       showVipGiftAnnouncement(data.senderName, { name: data.giftName, icon: data.giftIcon }, data.targetUserName);
       playSoundFx("fanfare");
       burstHearts(window.innerWidth / 2, window.innerHeight / 2);
+    }
+  } else if (type === "dm_received") {
+    const myId = String(TokTokState.localUser.id || "");
+    const myHandle = String(TokTokState.localUser.handle || "").toLowerCase().replace(/^@/, '').trim();
+    const rId = String(data.recipientId || "");
+    const rHandle = String(data.recipientHandle || "").toLowerCase().replace(/^@/, '').trim();
+
+    const isForMe = (rId && rId === myId) || (rHandle && (rHandle === myHandle || myHandle.includes(rHandle) || rHandle.includes(myHandle)));
+    if (isForMe && data.senderId !== TokTokState.localUser.id) {
+      const senderThreadKey = (data.senderHandle || '').toLowerCase().replace(/^@/, '');
+      if (!dmConversationHistory[senderThreadKey]) dmConversationHistory[senderThreadKey] = [];
+      dmConversationHistory[senderThreadKey].push({
+        sender: "them",
+        text: data.text,
+        time: new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      const pmModal = document.getElementById("privateMessageModal");
+      const isChattingWithSender = pmModal && pmModal.classList.contains("show") && currentDmRecipient && (currentDmRecipient.handle || '').toLowerCase().replace(/^@/, '') === senderThreadKey;
+
+      if (isChattingWithSender) {
+        renderDmMessages(senderThreadKey);
+        playSoundFx("pop");
+      } else {
+        playSoundFx("chime");
+      }
+      loadDmInbox();
     }
   } else if (type === "room_closed") {
     if (data && (!data.roomId || data.roomId === TokTokState.roomId)) {
@@ -5315,6 +5531,7 @@ function shareCurrentRoom() {
 // ===================================================================
 window.addEventListener("DOMContentLoaded", () => {
   loadRegisteredUsers();
+  loadDmInbox();
   loadLocalProfile();
   renderVideoGrid();
   renderGiftsCatalog();

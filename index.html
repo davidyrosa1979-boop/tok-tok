@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -84,6 +84,13 @@
         <button class="btn-pill btn-invite" id="openInviteModalBtn">
           <span class="btn-icon">👥</span>
           <span id="inviteBtnLabel">Invitar Registrados (0/15)</span>
+        </button>
+
+        <!-- Botón Buzón / Bandeja de Entrada -->
+        <button class="btn-pill btn-inbox-header" id="openInboxModalBtn" title="Bandeja de Entrada • Mensajes Privados">
+          <span class="btn-icon">📬</span>
+          <span>Buzón</span>
+          <span class="dm-unread-badge" id="dmHeaderUnreadBadge" style="display: none;">0</span>
         </button>
 
         <!-- Insignia Dorada CREADOR OFICIAL -->
@@ -302,6 +309,15 @@
         <button class="dock-btn" id="dockOpenDirectoryBtn" title="Ver directorio de usuarios registrados">
           <span class="dock-icon">👥</span>
           <span class="dock-label">Comunidad</span>
+        </button>
+
+        <!-- Botón Buzón / Bandeja de Entrada en Dock -->
+        <button class="dock-btn" id="dockOpenInboxBtn" title="Bandeja de Entrada • Mensajes Privados">
+          <span class="dock-icon" style="position: relative;">
+            📬
+            <span class="dm-unread-badge" id="dmDockUnreadBadge" style="display: none;">0</span>
+          </span>
+          <span class="dock-label">Buzón</span>
         </button>
 
         <!-- Botón para Bajarse del Escenario (Visible cuando el usuario está en el escenario) -->
@@ -1306,18 +1322,61 @@
     </div>
   </div>
 
+  <!-- Modal: BANDEJA DE ENTRADA / BUZÓN DE MENSAJES PRIVADOS (DM) -->
+  <div class="modal-backdrop" id="inboxModal">
+    <div class="modal-card modal-inbox-card" style="width: 460px; max-width: 95vw; height: 560px; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-emoji">📬</span>
+          <div>
+            <h3 style="font-size: 16px; margin: 0;">Bandeja de Entrada • Mensajes Privados</h3>
+            <span class="modal-subtitle" style="font-size: 12px; color: var(--text-muted);">Conversaciones directas guardadas</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeInboxModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 12px 16px; display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+        <div class="inbox-search-wrap" style="margin-bottom: 12px;">
+          <input 
+            type="text" 
+            id="inboxSearchInput" 
+            class="form-input" 
+            placeholder="🔍 Buscar conversación..." 
+            style="padding: 10px 14px; font-size: 13.5px; border-radius: 99px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; width: 100%; box-sizing: border-box;"
+          />
+        </div>
+
+        <div class="inbox-threads-list" id="inboxThreadsList" style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 4px;">
+          <!-- Items generados dinámicamente -->
+        </div>
+
+        <div class="inbox-empty-state" id="inboxEmptyState" style="display: none; text-align: center; padding: 40px 16px; color: var(--text-muted);">
+          <div style="font-size: 44px; margin-bottom: 10px;">📭</div>
+          <h4 style="color: #fff; margin-bottom: 6px; font-size: 15px;">No hay mensajes privados aún</h4>
+          <p style="font-size: 12.5px; line-height: 1.4;">Tus conversaciones privadas con otros usuarios se guardarán aquí automáticamente para que puedas revisarlas en cualquier momento.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: MENSAJES PRIVADOS / DIRECTOS (DM) (NUEVO) -->
   <div class="modal-backdrop" id="privateMessageModal">
     <div class="modal-card modal-dm-card">
-      <div class="modal-header dm-header">
-        <div class="dm-recipient-box">
-          <div class="dm-recipient-avatar" id="dmRecipientAvatar">👤</div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h3 id="dmRecipientName" style="font-size: 16px; margin: 0;">Usuario</h3>
-              <span class="online-indicator-dot"></span>
+      <div class="modal-header dm-header" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-back-to-inbox" id="btnBackToInboxFromDm" title="Volver al buzón" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span>⬅️ Buzón</span>
+          </button>
+          <div class="dm-recipient-box">
+            <div class="dm-recipient-avatar" id="dmRecipientAvatar">👤</div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 id="dmRecipientName" style="font-size: 16px; margin: 0;">Usuario</h3>
+                <span class="online-indicator-dot"></span>
+              </div>
+              <span class="dm-recipient-handle" id="dmRecipientHandle">@usuario • En línea</span>
             </div>
-            <span class="dm-recipient-handle" id="dmRecipientHandle">@usuario • En línea</span>
           </div>
         </div>
         <button class="modal-close-btn" id="closePrivateMessageModalBtn">&times;</button>
@@ -1474,6 +1533,6 @@
     <span>Moderación (HOST)</span>
   </button>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 </body>
 </html>

@@ -81,6 +81,29 @@ function saveExpelledDb(list) {
   }
 }
 
+// Base de datos de mensajes privados / bandeja de entrada
+const DMS_FILE = path.join(ROOT_DIR, "dms_db.json");
+
+function loadDmsDb() {
+  try {
+    if (fs.existsSync(DMS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DMS_FILE, "utf-8"));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) {
+    console.error("Error cargando dms_db.json:", e);
+  }
+  return [];
+}
+
+function saveDmsDb(dms) {
+  try {
+    fs.writeFileSync(DMS_FILE, JSON.stringify(dms, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error guardando dms_db.json:", e);
+  }
+}
+
 // ===================================================================
 // GESTIÓN DE SALAS EN VIVO INDEPENDIENTES (MULTI-ROOM)
 // ===================================================================
@@ -1185,6 +1208,166 @@ const server = http.createServer(async (req, res) => {
       if (room.chatHistory.length > 80) room.chatHistory.shift();
       broadcast("chat_message", giftAnnouncement, room.id);
     }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true }));
+  }
+
+  // -----------------------------------------------------------------
+  // ENDPOINTS DE MENSAJES PRIVADOS / BANDEJA DE ENTRADA (DM)
+  // -----------------------------------------------------------------
+
+  // Obtener la bandeja de entrada (resumen de conversaciones) para un usuario
+  if (pathname === "/api/dm/inbox" && req.method === "GET") {
+    const rawUser = String(parsedUrl.query.user || "").toLowerCase().replace(/^@/, "").trim();
+    if (!rawUser) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Debes indicar el usuario." }));
+    }
+
+    const dms = loadDmsDb();
+    const users = loadUsersDb();
+    const threadsMap = new Map();
+
+    dms.forEach(msg => {
+      const sHandle = String(msg.senderHandle || "").toLowerCase().replace(/^@/, "").trim();
+      const rHandle = String(msg.recipientHandle || "").toLowerCase().replace(/^@/, "").trim();
+      const sId = String(msg.senderId || "");
+      const rId = String(msg.recipientId || "");
+
+      const isSender = (sHandle === rawUser || sId === rawUser);
+      const isRecipient = (rHandle === rawUser || rId === rawUser);
+
+      if (isSender || isRecipient) {
+        const otherHandle = isSender ? rHandle : sHandle;
+        const otherId = isSender ? rId : sId;
+        const otherName = isSender ? msg.recipientName : msg.senderName;
+        const threadKey = otherHandle || otherId;
+
+        if (!threadsMap.has(threadKey)) {
+          const foundUser = users.find(u => 
+            (u.handle && u.handle.toLowerCase().replace(/^@/, '') === otherHandle) ||
+            (u.id && u.id === otherId)
+          );
+
+          threadsMap.set(threadKey, {
+            otherUser: {
+              id: otherId,
+              name: (foundUser && foundUser.name) || otherName || otherHandle,
+              handle: otherHandle ? `@${otherHandle}` : (foundUser && `@${foundUser.handle}`) || '@usuario',
+              avatarBg: (foundUser && foundUser.avatarBg) || '#25f4ee',
+              role: (foundUser && foundUser.role) || 'user',
+              isCreator: (foundUser && foundUser.isCreator) || otherHandle === 'dyr',
+              bio: (foundUser && foundUser.bio) || ''
+            },
+            lastMessage: msg,
+            unreadCount: 0,
+            messagesCount: 0
+          });
+        }
+
+        const thread = threadsMap.get(threadKey);
+        thread.messagesCount++;
+        if (!thread.lastMessage || (msg.timestamp || 0) > (thread.lastMessage.timestamp || 0)) {
+          thread.lastMessage = msg;
+        }
+        if (isRecipient && !msg.read) {
+          thread.unreadCount++;
+        }
+      }
+    });
+
+    const threads = Array.from(threadsMap.values()).sort((a, b) => 
+      ((b.lastMessage && b.lastMessage.timestamp) || 0) - ((a.lastMessage && a.lastMessage.timestamp) || 0)
+    );
+
+    const totalUnread = threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0);
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, threads, totalUnread }));
+  }
+
+  // Obtener conversación completa entre dos usuarios
+  if (pathname === "/api/dm/thread" && req.method === "GET") {
+    const u1 = String(parsedUrl.query.user1 || "").toLowerCase().replace(/^@/, "").trim();
+    const u2 = String(parsedUrl.query.user2 || "").toLowerCase().replace(/^@/, "").trim();
+
+    if (!u1 || !u2) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Debes indicar ambos usuarios." }));
+    }
+
+    const dms = loadDmsDb();
+    const threadMessages = dms.filter(msg => {
+      const s = String(msg.senderHandle || "").toLowerCase().replace(/^@/, "").trim();
+      const r = String(msg.recipientHandle || "").toLowerCase().replace(/^@/, "").trim();
+      const sId = String(msg.senderId || "");
+      const rId = String(msg.recipientId || "");
+
+      const isMatch1 = (s === u1 || sId === u1) && (r === u2 || rId === u2);
+      const isMatch2 = (s === u2 || sId === u2) && (r === u1 || rId === u1);
+      return isMatch1 || isMatch2;
+    }).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, messages: threadMessages }));
+  }
+
+  // Enviar nuevo mensaje privado
+  if (pathname === "/api/dm/send" && req.method === "POST") {
+    const { senderId, senderName, senderHandle, recipientId, recipientName, recipientHandle, text } = await parseJsonBody(req);
+    const cleanText = (text || "").trim();
+
+    if (!cleanText || (!recipientHandle && !recipientId)) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Mensaje o destinatario vacío." }));
+    }
+
+    const dms = loadDmsDb();
+    const newDm = {
+      id: `dm_${Date.now()}_${Math.random().toString(36).slice(-4)}`,
+      senderId: senderId || "",
+      senderName: senderName || "Usuario",
+      senderHandle: String(senderHandle || "").toLowerCase().replace(/^@/, "").trim(),
+      recipientId: recipientId || "",
+      recipientName: recipientName || "Usuario",
+      recipientHandle: String(recipientHandle || "").toLowerCase().replace(/^@/, "").trim(),
+      text: cleanText,
+      timestamp: Date.now(),
+      read: false
+    };
+
+    dms.push(newDm);
+    saveDmsDb(dms);
+
+    // Emitir evento en tiempo real para que el receptor lo reciba
+    rooms.forEach(r => {
+      broadcast("dm_received", newDm, r.id);
+    });
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, message: newDm }));
+  }
+
+  // Marcar mensajes como leídos
+  if (pathname === "/api/dm/mark-read" && req.method === "POST") {
+    const { myHandle, otherHandle } = await parseJsonBody(req);
+    const me = String(myHandle || "").toLowerCase().replace(/^@/, "").trim();
+    const other = String(otherHandle || "").toLowerCase().replace(/^@/, "").trim();
+
+    if (me && other) {
+      const dms = loadDmsDb();
+      let changed = false;
+      dms.forEach(m => {
+        const s = String(m.senderHandle || "").toLowerCase().replace(/^@/, "").trim();
+        const r = String(m.recipientHandle || "").toLowerCase().replace(/^@/, "").trim();
+        if (s === other && r === me && !m.read) {
+          m.read = true;
+          changed = true;
+        }
+      });
+      if (changed) saveDmsDb(dms);
+    }
+
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({ ok: true }));
   }

@@ -5,4 +5,5 @@ build/
 android-build/
 cloudflared.exe
 *.zip
+*.apk
 .system_generated/
