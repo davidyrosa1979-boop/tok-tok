@@ -40,5 +40,33 @@
     "bio": "🌸 Rosa y David • VIP Oficial",
     "avatarBg": "#fe2c55",
     "registeredAt": "2026-10-15T00:00:00.000Z"
+  },
+  {
+    "id": "user_elpikachu",
+    "name": "El Pikachu",
+    "handle": "elpikachu",
+    "email": "elpikachu@tokroom.live",
+    "role": "user",
+    "isCreator": false,
+    "isHost": false,
+    "hasInfiniteCoins": false,
+    "coins": 1000,
+    "bio": "⚡ El Pikachu oficial de la comunidad Tok Tok",
+    "avatarBg": "linear-gradient(135deg, #facc15 0%, #f97316 100%)",
+    "registeredAt": "2026-10-15T12:00:00.000Z"
+  },
+  {
+    "id": "user_elsupermak",
+    "name": "El Supermak",
+    "handle": "supermak",
+    "email": "supermak@tokroom.live",
+    "role": "user",
+    "isCreator": false,
+    "isHost": false,
+    "hasInfiniteCoins": false,
+    "coins": 1000,
+    "bio": "💥 El Supermak oficial en Tok Tok",
+    "avatarBg": "linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)",
+    "registeredAt": "2026-10-15T12:00:00.000Z"
   }
 ]

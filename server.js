@@ -278,20 +278,24 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, users }));
   }
 
-  // Iniciar sesión con Correo Electrónico
+  // Iniciar sesión con Correo Electrónico o Nombre de Usuario
   if (pathname === "/api/auth/login" && req.method === "POST") {
     const { email } = await parseJsonBody(req);
     const cleanEmail = (email || "").toLowerCase().trim();
+    const cleanHandle = cleanEmail.replace(/^@/, "").trim();
     if (!cleanEmail) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "Debes introducir tu correo electrónico para iniciar sesión." }));
+      return res.end(JSON.stringify({ ok: false, error: "Debes introducir tu correo electrónico o usuario para iniciar sesión." }));
     }
 
     const users = loadUsersDb();
-    let found = users.find(u => (u.email || "").toLowerCase().trim() === cleanEmail);
+    let found = users.find(u => 
+      (u.email && u.email.toLowerCase().trim() === cleanEmail) ||
+      (u.handle && u.handle.toLowerCase().trim() === cleanHandle)
+    );
 
-    // Caso David / DYR Creador Oficial (por correo oficial)
-    if (cleanEmail === "davidyrosa1979@gmail.com") {
+    // Caso David / DYR Creador Oficial (por correo oficial o usuario)
+    if (cleanEmail === "davidyrosa1979@gmail.com" || cleanHandle === "dyr") {
       if (!found) {
         found = {
           id: "user_dyr_creator",
@@ -314,13 +318,13 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: true, user: found, isCreator: true }));
     }
 
-    // Caso Rosa y David VIP Oficial (por correo rosaydavid1979@gmail.com o rosa@tokroom.live)
-    if (cleanEmail === "rosaydavid1979@gmail.com" || cleanEmail === "rosa@tokroom.live" || cleanEmail.includes("rosaydavid")) {
+    // Caso Rosa y David VIP Oficial (por correo rosaydavid1979@gmail.com, rosa@tokroom.live o usuario rosaydavid)
+    if (cleanEmail === "rosaydavid1979@gmail.com" || cleanEmail === "rosa@tokroom.live" || cleanEmail.includes("rosaydavid") || cleanHandle === "rosaydavid") {
       found = {
         id: "user_rosa_guest",
         name: "Rosa y David",
         handle: "rosaydavid",
-        email: cleanEmail,
+        email: cleanEmail.includes("@") ? cleanEmail : "rosaydavid1979@gmail.com",
         role: "vip",
         isCreator: false,
         isHost: false,
@@ -353,7 +357,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({
         ok: false,
-        error: "No existe ninguna cuenta registrada con este correo electrónico. Por favor, pulsa en la pestaña 'Registrarse' para crear tu cuenta."
+        error: "No existe ninguna cuenta registrada con este correo o usuario. Por favor, pulsa en la pestaña 'Registrarse' para crear tu cuenta."
       }));
     }
 
@@ -363,7 +367,7 @@ const server = http.createServer(async (req, res) => {
 
   // Registro de nuevo usuario en Tok Tok
   if (pathname === "/api/auth/register" && req.method === "POST") {
-    const { name, email, handle, bio, avatarBg } = await parseJsonBody(req);
+    const { id, name, email, handle, bio, avatarBg } = await parseJsonBody(req);
     const cleanEmail = (email || "").toLowerCase().trim();
     const cleanName = (name || "").trim();
     const cleanHandle = (handle || "").toLowerCase().replace(/^@/, "").trim();
@@ -385,15 +389,30 @@ const server = http.createServer(async (req, res) => {
     }
 
     const users = loadUsersDb();
-    if (users.some(u => (u.email || "").toLowerCase().trim() === cleanEmail)) {
-      res.writeHead(409, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "Ya existe una cuenta con este correo electrónico. Ve a 'Iniciar Sesión'." }));
+    const existingIndex = users.findIndex(u => 
+      (u.email && u.email.toLowerCase().trim() === cleanEmail) ||
+      (u.handle && u.handle.toLowerCase().trim() === cleanHandle)
+    );
+
+    if (existingIndex !== -1) {
+      if (users[existingIndex].id !== "user_dyr_creator") {
+        users[existingIndex] = {
+          ...users[existingIndex],
+          name: cleanName || users[existingIndex].name,
+          handle: cleanHandle || users[existingIndex].handle,
+          bio: bio || users[existingIndex].bio,
+          avatarBg: avatarBg || users[existingIndex].avatarBg
+        };
+        saveUsersDb(users);
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: true, user: users[existingIndex] }));
     }
 
     // Comprobar si es Rosa y David (VIP Oficial)
     const isRosa = cleanEmail.includes("rosa") || cleanName.toLowerCase().includes("rosa") || cleanHandle.includes("rosa");
     const newUser = {
-      id: isRosa ? "user_rosa_guest" : `user_${Date.now()}`,
+      id: id || (isRosa ? "user_rosa_guest" : `user_${Date.now()}`),
       name: cleanName,
       handle: cleanHandle,
       email: cleanEmail,

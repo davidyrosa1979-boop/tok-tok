@@ -2567,23 +2567,28 @@ function setupEventListeners() {
       }
 
       const emailInput = document.getElementById("loginEmailInput");
-      const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+      const rawInput = emailInput ? emailInput.value.trim().toLowerCase() : "";
 
-      if (!email) {
+      if (!rawInput) {
         if (loginError) {
-          loginError.textContent = "⚠️ Debes ingresar tu correo electrónico.";
+          loginError.textContent = "⚠️ Debes ingresar tu correo electrónico o nombre de usuario.";
           loginError.style.display = "flex";
         }
         return;
       }
 
-      if (!isValidEmail(email)) {
+      // Permitir correo válido o usuario (al menos 2 caracteres)
+      const isEmail = isValidEmail(rawInput);
+      const isHandle = /^[a-zA-Z0-9_@.-]{2,}$/.test(rawInput);
+      if (!isEmail && !isHandle) {
         if (loginError) {
-          loginError.textContent = "⚠️ Formato de correo inválido (ejemplo: usuario@correo.com).";
+          loginError.textContent = "⚠️ Introduce tu correo electrónico (ej: usuario@correo.com) o tu nombre de usuario (ej: @elpikachu).";
           loginError.style.display = "flex";
         }
         return;
       }
+
+      const email = rawInput;
 
       try {
         const res = await fetch("/api/auth/login", {
@@ -3695,6 +3700,27 @@ function activateAccount(state) {
   });
   saveRegisteredUsers();
   renderRegisteredUsersDirectory();
+
+  // Sincronizar permanentemente con el servidor central
+  fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: newProfile.id,
+      name: newProfile.name,
+      handle: newProfile.handle,
+      email: newProfile.email,
+      bio: newProfile.bio,
+      avatarBg: newProfile.avatarBg
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data && data.ok) {
+      loadRegisteredUsers();
+    }
+  })
+  .catch(err => console.error("Error sincronizando registro con servidor:", err));
 
   updateProfileHeaderUI();
   updateCoinsDisplay();
