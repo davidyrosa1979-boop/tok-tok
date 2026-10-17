@@ -579,19 +579,19 @@
           <div class="verify-sent-info">
             <span class="verify-sent-label">Hemos enviado un código de seguridad a:</span>
             <div class="verify-target-email-chip" id="verifyTargetEmailDisplay">usuario@correo.com</div>
-            <p class="verify-sub-hint">Para activar tu cuenta debes entrar a tu correo y comprobar el código recibido.</p>
+            <p class="verify-sub-hint">Abre tu correo electrónico en tu móvil o navegador, copia el código de 6 números recibido e introdúcelo a continuación.</p>
           </div>
         </div>
 
-        <!-- Botón interactivo de apertura de buzón de correo -->
-        <button type="button" class="btn-open-inbox" id="openInboxSimulatorBtn">
-          <span class="inbox-btn-icon">📬</span>
-          <div class="inbox-btn-texts">
-            <strong>Entrar a Mi Bandeja de Correo</strong>
-            <span>Ver el correo que te hemos enviado y activar en 1 clic</span>
-          </div>
-          <span class="inbox-btn-arrow">➔</span>
-        </button>
+        <!-- Enlaces rápidos directos a proveedores de correo -->
+        <div class="email-provider-shortcuts" style="display: flex; gap: 8px; margin: 12px 0 16px 0;">
+          <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            📧 Abrir Gmail
+          </a>
+          <a href="https://outlook.live.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            📬 Abrir Outlook
+          </a>
+        </div>
 
         <form id="emailVerificationForm" class="verification-form" novalidate>
           <div id="verifyCodeError" class="reg-error-box" style="display: none;"></div>
@@ -611,12 +611,7 @@
               pattern="[0-9]*"
               required 
             />
-            <span class="input-hint" style="text-align: center;">Escribe los 6 números enviados a tu dirección.</span>
-            <div style="margin-top: 10px; display: flex; justify-content: center;">
-              <button type="button" id="quickAutoPastePinBtn" style="background: rgba(37, 244, 238, 0.15); border: 1px solid #25f4ee; color: #25f4ee; padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; cursor: pointer;">
-                ⚡ Pegar Código de Activación Automático
-              </button>
-            </div>
+            <span class="input-hint" style="text-align: center;">Escribe los 6 números que te han llegado a tu correo.</span>
           </div>
 
           <button type="submit" class="btn-primary-action btn-submit-verify" id="btnSubmitVerifyCode">
@@ -1522,6 +1517,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

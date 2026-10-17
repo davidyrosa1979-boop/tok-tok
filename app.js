@@ -3947,63 +3947,77 @@ function handleMandatoryRegistration(e) {
     return showError("Debes marcar la casilla aceptando las normas de la comunidad y certificando que tu correo es válido.");
   }
 
-  // Generar código de verificación aleatorio de 6 dígitos
-  const pin = Math.floor(100000 + Math.random() * 900000).toString();
-  pendingVerificationState = {
-    name: name,
-    handle: handle,
-    email: email.toLowerCase(),
-    bio: bio || "Usuario registrado en TokRoom 🌟",
-    avatarBg: selectedColor,
-    pinCode: pin,
-    timestamp: Date.now()
-  };
-
-  // Actualizar UI del Modal de Verificación y Simulador de Buzón
-  const targetEmailDisplay = document.getElementById("verifyTargetEmailDisplay");
-  if (targetEmailDisplay) targetEmailDisplay.textContent = pendingVerificationState.email;
-
-  const inboxRecipientDisplay = document.getElementById("inboxRecipientDisplay");
-  if (inboxRecipientDisplay) inboxRecipientDisplay.textContent = `para: ${pendingVerificationState.email}`;
-
-  const inboxEmailCodeDisplay = document.getElementById("inboxEmailCodeDisplay");
-  if (inboxEmailCodeDisplay) inboxEmailCodeDisplay.textContent = pin;
-
-  const emailGreetingName = document.getElementById("emailGreetingName");
-  if (emailGreetingName) emailGreetingName.textContent = `¡Hola, ${name}!`;
-
-  const pinInput = document.getElementById("verifyPinInput");
-  if (pinInput) {
-    pinInput.value = "";
-    setTimeout(() => pinInput.focus(), 300);
+  // Solicitar al servidor el envío del código de 6 dígitos al correo real (Resend / Brevo)
+  const submitBtn = document.getElementById("btnSubmitMandatoryRegister");
+  const originalBtnText = submitBtn ? submitBtn.innerHTML : "Crear Mi Perfil y Recibir Código";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "<span>⏳ Enviando código a tu correo...</span>";
   }
 
-  // Cerrar registro paso 1 y abrir verificación paso 2
-  const regModal = document.getElementById("mandatoryRegisterModal");
-  if (regModal) regModal.classList.remove("show");
+  const payload = {
+    name: name,
+    handle: handle,
+    email: email.toLowerCase().trim(),
+    bio: bio || "Usuario registrado en TokRoom 🌟",
+    avatarBg: selectedColor
+  };
 
-  openModal("emailVerificationModal");
-  playSoundFx("chime");
+  fetch("/api/auth/send-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
 
-  // Mostrar notificación flotante de correo entrante
-  showIncomingEmailToast(pin);
+    if (!data.ok) {
+      return showError(data.error || "No se pudo enviar el correo de verificación. Inténtalo de nuevo.");
+    }
+
+    pendingVerificationState = {
+      name: payload.name,
+      handle: payload.handle,
+      email: payload.email,
+      bio: payload.bio,
+      avatarBg: payload.avatarBg,
+      timestamp: Date.now()
+    };
+
+    const targetEmailDisplay = document.getElementById("verifyTargetEmailDisplay");
+    if (targetEmailDisplay) targetEmailDisplay.textContent = pendingVerificationState.email;
+
+    const emailGreetingName = document.getElementById("emailGreetingName");
+    if (emailGreetingName) emailGreetingName.textContent = `¡Hola, ${name}!`;
+
+    const pinInput = document.getElementById("verifyPinInput");
+    if (pinInput) {
+      pinInput.value = "";
+      setTimeout(() => pinInput.focus(), 300);
+    }
+
+    // Cerrar registro paso 1 y abrir verificación paso 2
+    const regModal = document.getElementById("mandatoryRegisterModal");
+    if (regModal) regModal.classList.remove("show");
+
+    openModal("emailVerificationModal");
+    playSoundFx("chime");
+  })
+  .catch(err => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
+    showError("Error de conexión al enviar el correo. Por favor, comprueba tu conexión e inténtalo de nuevo.");
+  });
 }
 
 function showIncomingEmailToast(pin) {
-  if (isUserRegistered()) return;
-  const toast = document.getElementById("incomingEmailToast");
-  const subject = document.getElementById("incomingToastSubject");
-  if (!toast) return;
-
-  toast.style.display = "flex";
-  if (subject) subject.textContent = `Tu código de activación es: ${pin}`;
-  void toast.offsetWidth;
-  toast.classList.add("show");
-
-  clearTimeout(window._incomingToastTimer);
-  window._incomingToastTimer = setTimeout(() => {
-    hideIncomingEmailToast();
-  }, 4000);
+  // El código se envía de forma confidencial al correo del usuario y ya no se muestra en pantalla
 }
 
 function handleVerificationCodeSubmit(e) {
@@ -4019,20 +4033,58 @@ function handleVerificationCodeSubmit(e) {
 
   if (!enteredCode || enteredCode.length !== 6) {
     if (errorBox) {
-      errorBox.innerHTML = "⚠️ Debes ingresar el código completo de 6 dígitos enviado a tu correo.";
+      errorBox.innerHTML = "⚠️ Debes ingresar el código completo de 6 dígitos que te enviamos al correo.";
       errorBox.style.display = "flex";
     }
     return;
   }
 
-  if (enteredCode === pendingVerificationState.pinCode) {
-    activateAccount(pendingVerificationState);
-  } else {
+  const submitBtn = document.getElementById("btnSubmitVerifyCode");
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "<span>⏳ Verificando código con el servidor...</span>";
+  }
+
+  fetch("/api/auth/verify-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: pendingVerificationState.email,
+      code: enteredCode,
+      name: pendingVerificationState.name,
+      handle: pendingVerificationState.handle,
+      bio: pendingVerificationState.bio,
+      avatarBg: pendingVerificationState.avatarBg
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = "<span>✅ Activar Cuenta y Acceder a la Sala</span>";
+    }
+
+    if (!data.ok) {
+      if (errorBox) {
+        errorBox.innerHTML = `❌ ${data.error || "El código introducido es incorrecto."}`;
+        errorBox.style.display = "flex";
+      }
+      return;
+    }
+
+    // Código validado exitosamente en el servidor: activar perfil local
+    activateAccount(data.user);
+  })
+  .catch(err => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = "<span>✅ Activar Cuenta y Acceder a la Sala</span>";
+    }
     if (errorBox) {
-      errorBox.innerHTML = "❌ Código incorrecto. Revisa tu buzón o pulsa 'Entrar a Mi Bandeja de Correo' para ver el código exacto.";
+      errorBox.innerHTML = "❌ Error al verificar con el servidor. Comprueba tu conexión e inténtalo de nuevo.";
       errorBox.style.display = "flex";
     }
-  }
+  });
 }
 
 function activateAccount(state) {
@@ -4145,20 +4197,48 @@ function activateAccount(state) {
 }
 
 function resendVerificationEmail() {
-  const pin = Math.floor(100000 + Math.random() * 900000).toString();
-  pendingVerificationState.pinCode = pin;
-
-  const inboxEmailCodeDisplay = document.getElementById("inboxEmailCodeDisplay");
-  if (inboxEmailCodeDisplay) inboxEmailCodeDisplay.textContent = pin;
-
-  const errorBox = document.getElementById("verifyCodeError");
-  if (errorBox) {
-    errorBox.style.display = "none";
+  const resendBtn = document.getElementById("resendVerificationCodeBtn");
+  if (resendBtn) {
+    resendBtn.disabled = true;
+    resendBtn.textContent = "⏳ Enviando nuevo código...";
   }
 
-  playSoundFx("chime");
-  showIncomingEmailToast(pin);
-  alert(`✉️ Se ha reenviado un nuevo correo de verificación a ${pendingVerificationState.email}.\nTu nuevo código es: ${pin}`);
+  fetch("/api/auth/send-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: pendingVerificationState.name,
+      handle: pendingVerificationState.handle,
+      email: pendingVerificationState.email,
+      bio: pendingVerificationState.bio,
+      avatarBg: pendingVerificationState.avatarBg
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (resendBtn) {
+      resendBtn.disabled = false;
+      resendBtn.textContent = "🔄 Reenviar nuevo correo";
+    }
+
+    if (!data.ok) {
+      alert(`⚠️ ${data.error || "No se pudo reenviar el correo de verificación."}`);
+      return;
+    }
+
+    const errorBox = document.getElementById("verifyCodeError");
+    if (errorBox) errorBox.style.display = "none";
+
+    playSoundFx("chime");
+    alert(`✉️ Se ha enviado un nuevo código de 6 dígitos a ${pendingVerificationState.email}.\nPor favor, abre tu correo y comprueba la bandeja de entrada o spam.`);
+  })
+  .catch(() => {
+    if (resendBtn) {
+      resendBtn.disabled = false;
+      resendBtn.textContent = "🔄 Reenviar nuevo correo";
+    }
+    alert("❌ Error de conexión al solicitar el reenvío.");
+  });
 }
 
 function returnToRegistrationForm() {

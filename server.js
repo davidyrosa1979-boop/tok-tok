@@ -274,6 +274,112 @@ function parseJsonBody(req) {
 }
 
 // ===================================================================
+// SISTEMA DE ENVÍO DE CORREOS REALES (RESEND / BREVO API - OPCIÓN B)
+// ===================================================================
+const pendingVerifications = new Map(); // cleanEmail -> { pin, name, handle, bio, avatarBg, expiresAt }
+
+async function sendEmailVerification(toEmail, toName, pinCode) {
+  const resendApiKey = process.env.RESEND_API_KEY || "";
+  const brevoApiKey = process.env.BREVO_API_KEY || "";
+
+  // 1. Envío profesional vía Resend (resend.com)
+  if (resendApiKey) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from: "TokTok Live <onboarding@resend.dev>",
+          to: [toEmail],
+          subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; background-color: #0b0e14; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 520px; margin: 0 auto; border: 1px solid #fe2c55;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #fe2c55; margin: 0; font-size: 28px; letter-spacing: 1px;">TokTok Live 🌟</h1>
+                <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Comunidad y Salas de Video en Vivo</p>
+              </div>
+              <p style="font-size: 16px; color: #ffffff;">¡Hola, <strong>${toName}</strong>!</p>
+              <p style="font-size: 14px; color: #cbd5e1; line-height: 1.5;">
+                Para verificar tu dirección de correo y activar tu cuenta en TokTok Live, ingresa el siguiente código de seguridad de 6 dígitos:
+              </p>
+              <div style="background: rgba(254, 44, 85, 0.12); border: 2px dashed #fe2c55; border-radius: 10px; padding: 20px; text-align: center; margin: 25px 0;">
+                <span style="font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #ffffff; font-family: monospace;">${pinCode}</span>
+              </div>
+              <p style="font-size: 13px; color: #94a3b8; text-align: center;">
+                ⏱️ Este código es de un solo uso y caduca en 15 minutos.<br>
+                Si tú no has solicitado este código, puedes ignorar este correo de forma segura.
+              </p>
+              <hr style="border: none; border-top: 1px solid #1e293b; margin: 25px 0;">
+              <p style="font-size: 11px; color: #64748b; text-align: center; margin: 0;">
+                TokTok Live Oficial &bull; Plataforma Segura RGPD &bull; 2026
+              </p>
+            </div>
+          `
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        console.log(`✉️ Correo de verificación enviado exitosamente a ${toEmail} vía Resend`);
+        return { ok: true, provider: "resend" };
+      } else {
+        console.error("Error respuesta Resend:", data);
+        return { ok: false, error: data.message || "Error al enviar correo por Resend" };
+      }
+    } catch (err) {
+      console.error("Fallo de conexión con Resend:", err);
+      return { ok: false, error: err.message };
+    }
+  }
+
+  // 2. Envío profesional vía Brevo (brevo.com)
+  if (brevoApiKey) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": brevoApiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          sender: { name: "TokTok Live", email: "soporte@tokroom.live" },
+          to: [{ email: toEmail, name: toName }],
+          subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0b0e14; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 520px; margin: 0 auto; border: 1px solid #fe2c55;">
+              <h1 style="color: #fe2c55; text-align: center;">TokTok Live 🌟</h1>
+              <p style="font-size: 16px;">¡Hola, <strong>${toName}</strong>!</p>
+              <p style="font-size: 14px; color: #cbd5e1;">Tu código de verificación de 6 dígitos es:</p>
+              <div style="background: rgba(254, 44, 85, 0.12); border: 2px dashed #fe2c55; border-radius: 10px; padding: 18px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ffffff;">${pinCode}</span>
+              </div>
+              <p style="font-size: 12px; color: #94a3b8; text-align: center;">Caduca en 15 minutos.</p>
+            </div>
+          `
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        console.log(`✉️ Correo de verificación enviado exitosamente a ${toEmail} vía Brevo`);
+        return { ok: true, provider: "brevo" };
+      } else {
+        console.error("Error respuesta Brevo:", data);
+        return { ok: false, error: data.message || "Error al enviar correo por Brevo" };
+      }
+    } catch (err) {
+      console.error("Fallo de conexión con Brevo:", err);
+      return { ok: false, error: err.message };
+    }
+  }
+
+  // Fallback en consola si aún no se ha colocado la clave API en Render
+  console.log(`⚠️ [AVISO CONFIGURACIÓN] RESEND_API_KEY no detectada. Código enviado a ${toEmail}: ${pinCode}`);
+  return { ok: true, simulated: true, pin: pinCode };
+}
+
+// ===================================================================
 // SERVIDOR HTTP + REST API + SSE
 // ===================================================================
 const server = http.createServer(async (req, res) => {
@@ -400,7 +506,129 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, user: found, isCreator: !!found.isCreator }));
   }
 
-  // Registro de nuevo usuario en Tok Tok
+  // -----------------------------------------------------------------
+  // ENVÍO DE CÓDIGO DE VERIFICACIÓN POR CORREO (OPCIÓN B - RESEND/BREVO)
+  // -----------------------------------------------------------------
+  if (pathname === "/api/auth/send-verification" && req.method === "POST") {
+    const { email, name, handle, bio, avatarBg } = await parseJsonBody(req);
+    const cleanEmail = (email || "").toLowerCase().trim();
+    const cleanName = (name || "").trim();
+    const cleanHandle = (handle || "").toLowerCase().replace(/^@/, "").trim();
+
+    if (!cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Debes ingresar un correo electrónico válido." }));
+    }
+
+    if (!cleanName || !cleanHandle) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Nombre y usuario son obligatorios." }));
+    }
+
+    if (cleanEmail === "davidyrosa1979@gmail.com") {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "Este correo pertenece al Creador Oficial (DYR). Por favor, ve a la pestaña 'Iniciar Sesión'." }));
+    }
+
+    if (cleanName.toUpperCase() === "DYR" || cleanHandle === "dyr") {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "El nombre y usuario 'DYR' están reservados para el Creador Oficial." }));
+    }
+
+    // Generar código de seguridad de 6 dígitos
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    pendingVerifications.set(cleanEmail, {
+      pin,
+      name: cleanName,
+      handle: cleanHandle,
+      bio: bio || "Usuario registrado en TokRoom 🌟",
+      avatarBg: avatarBg || "#fe2c55",
+      expiresAt: Date.now() + 15 * 60 * 1000
+    });
+
+    const emailRes = await sendEmailVerification(cleanEmail, cleanName, pin);
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({
+      ok: true,
+      email: cleanEmail,
+      message: `Hemos enviado tu código de seguridad a ${cleanEmail}`,
+      simulated: !!emailRes.simulated
+    }));
+  }
+
+  // -----------------------------------------------------------------
+  // VALIDACIÓN DEL CÓDIGO Y ACTIVACIÓN DIRECTA DE LA CUENTA
+  // -----------------------------------------------------------------
+  if (pathname === "/api/auth/verify-code" && req.method === "POST") {
+    const { email, code, name, handle, bio, avatarBg } = await parseJsonBody(req);
+    const cleanEmail = (email || "").toLowerCase().trim();
+    const cleanCode = String(code || "").trim().replace(/\s+/g, "");
+
+    const pending = pendingVerifications.get(cleanEmail);
+    if (!pending) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "No hay ninguna solicitud de verificación pendiente para este correo o ha caducado. Pulsa 'Reenviar código'." }));
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      pendingVerifications.delete(cleanEmail);
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "El código de verificación ha caducado (15 minutos). Por favor, pulsa 'Reenviar código'." }));
+    }
+
+    if (pending.pin !== cleanCode) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error: "El código de 6 dígitos introducido es incorrecto. Por favor, revisa tu correo electrónico." }));
+    }
+
+    // Código correcto: Registrar usuario en users_db.json
+    const users = loadUsersDb();
+    const existingIndex = users.findIndex(u => 
+      (u.email && u.email.toLowerCase().trim() === cleanEmail) ||
+      (u.handle && u.handle.toLowerCase().trim() === pending.handle)
+    );
+
+    const isRosa = cleanEmail.includes("rosa") || pending.name.toLowerCase().includes("rosa") || pending.handle.includes("rosa");
+    let userRecord = null;
+
+    if (existingIndex !== -1) {
+      users[existingIndex] = {
+        ...users[existingIndex],
+        name: pending.name || users[existingIndex].name,
+        handle: pending.handle || users[existingIndex].handle,
+        bio: pending.bio || users[existingIndex].bio,
+        avatarBg: pending.avatarBg || users[existingIndex].avatarBg,
+        isEmailVerified: true
+      };
+      userRecord = users[existingIndex];
+    } else {
+      userRecord = {
+        id: isRosa ? "user_rosa_guest" : `user_${Date.now()}`,
+        name: pending.name,
+        handle: pending.handle,
+        email: cleanEmail,
+        bio: pending.bio,
+        avatarBg: pending.avatarBg,
+        role: isRosa ? "vip" : "user",
+        isCreator: false,
+        isHost: false,
+        hasInfiniteCoins: isRosa,
+        coins: isRosa ? 999999999 : 1000,
+        isEmailVerified: true,
+        registeredAt: new Date().toISOString()
+      };
+      users.push(userRecord);
+    }
+
+    saveUsersDb(users);
+    pendingVerifications.delete(cleanEmail);
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ ok: true, user: userRecord }));
+  }
+
+  // Registro de nuevo usuario en Tok Tok (fallback directo)
   if (pathname === "/api/auth/register" && req.method === "POST") {
     const { id, name, email, handle, bio, avatarBg } = await parseJsonBody(req);
     const cleanEmail = (email || "").toLowerCase().trim();
