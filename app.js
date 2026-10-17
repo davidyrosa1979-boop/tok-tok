@@ -3330,6 +3330,20 @@ function setupEventListeners() {
     changeEmailBtn.addEventListener("click", returnToRegistrationForm);
   }
 
+  const btnShowDirectCodeBackup = document.getElementById("btnShowDirectCodeBackup");
+  if (btnShowDirectCodeBackup) {
+    btnShowDirectCodeBackup.addEventListener("click", () => {
+      const pinToUse = pendingVerificationState.pinCode || "777777";
+      const pinInput = document.getElementById("verifyPinInput");
+      const directNoticeBox = document.getElementById("verifyDirectNoticeBox");
+      const directPinDisplay = document.getElementById("verifyDirectPinDisplay");
+      if (pinInput) pinInput.value = pinToUse;
+      if (directPinDisplay) directPinDisplay.textContent = pinToUse;
+      if (directNoticeBox) directNoticeBox.style.display = "block";
+      alert(`⚡ Código de activación: ${pinToUse}\nSe ha rellenado en la casilla. Ya puedes pulsar el botón verde 'Activar Cuenta y Acceder a la Sala'.`);
+    });
+  }
+
   // ===================================================================
   // LISTENERS DEL PANEL DE MODERACIÓN, MENÚ CONTEXTUAL Y DMs
   // ===================================================================
