@@ -3035,38 +3035,27 @@ function setupEventListeners() {
     }
   });
 
-  // Salir de la Sala o Bajarse del Escenario
+  // Salir de la Sala a la Pantalla Principal (Lobby)
   const endRoomBtn = document.getElementById("endRoomBtn");
   if (endRoomBtn) {
     endRoomBtn.addEventListener("click", () => {
       const isGuestOnStage = TokTokState.guestsOnStage.some(g => g && g.id === TokTokState.localUser.id);
       if (isGuestOnStage) {
-        if (confirm("Estás en el escenario en vivo.\n¿Deseas bajarte del escenario y continuar en la sala como espectador?\n(Pulsa Cancelar si deseas salir por completo de la aplicación)")) {
-          leaveStage();
-          return;
-        }
+        leaveStage();
       }
 
       const isCustomRoom = TokTokState.roomId && TokTokState.roomId !== "main";
-      const isHost = TokTokState.localUser.isHost || TokTokState.localUser.isCreator;
+      const isHost = isOfficialCreator() || TokTokState.localUser.isHost;
 
       if (isCustomRoom && isHost) {
-        if (confirm("👑 Eres el Anfitrión de esta sala en vivo.\n\n¿Deseas FINALIZAR y CERRAR la sala para todos los participantes? La sala se eliminará automáticamente y todos volverán a la Sala Principal.")) {
+        if (confirm("👑 Eres el Anfitrión de esta sala en vivo.\n\n¿Deseas FINALIZAR y CERRAR la sala para todos los participantes? La sala se eliminará automáticamente y volverás a la Pantalla Principal.")) {
           deleteRoom(TokTokState.roomId, true);
           return;
         }
       }
 
-      if (confirm(TokTokState.localUser.isHost ? "¿Deseas finalizar la sala en vivo de Tok Tok?" : "¿Deseas salir de la sala de Tok Tok?")) {
-        if (!TokTokState.localUser.isHost) {
-          leaveLiveRoomToLobby();
-        } else {
-          if (isCustomRoom) {
-            deleteRoom(TokTokState.roomId, true);
-          } else {
-            location.reload();
-          }
-        }
+      if (confirm("¿Deseas salir a la Pantalla Principal de Tok Tok?")) {
+        leaveLiveRoomToLobby();
       }
     });
   }
@@ -3577,7 +3566,13 @@ function hideIncomingEmailToast() {
 }
 
 function checkRoomEntrance() {
-  const isCreator = TokTokState.localUser.isHost || TokTokState.localUser.isCreator;
+  const exitedToLobby = sessionStorage.getItem("toktok_exit_to_lobby") === "1";
+  if (exitedToLobby) {
+    showRoomEntranceOverlay();
+    return;
+  }
+
+  const isCreator = isOfficialCreator();
   if (isCreator) {
     TokTokState.isJoinedRoom = true;
     const overlay = document.getElementById("roomEntranceOverlay");
@@ -3601,9 +3596,15 @@ function showRoomEntranceOverlay() {
   if (overlay) overlay.style.display = "flex";
   const banner = document.getElementById("privateRoomBanner");
   if (banner) banner.style.display = "none";
+
+  const lobbyTitle = document.getElementById("lobbyRoomTitle");
+  if (lobbyTitle) {
+    lobbyTitle.textContent = TokTokState.roomName || "Sala Oficial de DYR";
+  }
 }
 
 function enterLiveRoom() {
+  sessionStorage.removeItem("toktok_exit_to_lobby");
   unlockAudioContexts();
   TokTokState.isJoinedRoom = true;
   const overlay = document.getElementById("roomEntranceOverlay");
@@ -3614,10 +3615,12 @@ function enterLiveRoom() {
   addChatMessage("TokTokBot", `👋 Te has unido a la sala en vivo de DYR.`);
   playSoundFx("join");
   sendPresenceHeartbeat();
+  setupLocalCamera();
 }
 
 function requestStageJoin() {
-  const isCreator = TokTokState.localUser.isHost || TokTokState.localUser.isCreator;
+  sessionStorage.removeItem("toktok_exit_to_lobby");
+  const isCreator = isOfficialCreator();
   if (isCreator) {
     enterLiveRoom();
     return;
@@ -3816,6 +3819,9 @@ function stayInPrivateRoom() {
 }
 
 function leaveLiveRoomToLobby() {
+  sessionStorage.setItem("toktok_exit_to_lobby", "1");
+  TokTokState.isJoinedRoom = false;
+
   if (TokTokState.localUser.mediaStream) {
     try { TokTokState.localUser.mediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
     TokTokState.localUser.mediaStream = null;
@@ -3823,7 +3829,14 @@ function leaveLiveRoomToLobby() {
   TokTokState.localUser.cameraOn = false;
   TokTokState.localUser.micOn = false;
 
-  TokTokState.isJoinedRoom = false;
+  const localVid = document.getElementById("localUserVideo");
+  if (localVid) localVid.srcObject = null;
+
+  if (TokTokState.roomId && TokTokState.roomId !== "main") {
+    window.location.href = window.location.pathname;
+    return;
+  }
+
   showRoomEntranceOverlay();
 }
 
