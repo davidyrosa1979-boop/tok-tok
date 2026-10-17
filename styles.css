@@ -4269,6 +4269,8 @@ body.toktok-theme {
   padding: 32px 24px;
   max-width: 420px;
   width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -4491,6 +4493,35 @@ body.toktok-theme {
 .btn-lobby-switch-room:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: var(--tok-cyan);
+}
+
+.btn-lobby-register {
+  background: rgba(37, 244, 238, 0.08);
+  border: 1px solid rgba(37, 244, 238, 0.35);
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+  color: #25f4ee;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-lobby-register:hover {
+  background: rgba(37, 244, 238, 0.18);
+  border-color: #25f4ee;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 244, 238, 0.25);
+}
+
+.btn-lobby-register:active {
+  transform: scale(0.98);
 }
 
 .rooms-list-grid {

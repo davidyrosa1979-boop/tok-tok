@@ -10,5 +10,29 @@
     "text": "Hola David, bienvenido al buzon",
     "timestamp": 1792152250793,
     "read": true
+  },
+  {
+    "id": "dm_1792248638340_txbd",
+    "senderId": "user_assistant_support",
+    "senderName": "Soporte TokTok",
+    "senderHandle": "soporte",
+    "recipientId": "user_dyr_creator",
+    "recipientName": "DYR",
+    "recipientHandle": "dyr",
+    "text": "�Hola David! ?? Este es tu mensaje privado de prueba para verificar el globo rojo y el contador de mensajes nuevos ???",
+    "timestamp": 1792248638340,
+    "read": false
+  },
+  {
+    "id": "dm_1792248709957_j8dg",
+    "senderId": "user_assistant_support",
+    "senderName": "Soporte TokTok",
+    "senderHandle": "soporte",
+    "recipientId": "user_dyr_creator",
+    "recipientName": "DYR",
+    "recipientHandle": "dyr",
+    "text": "�Segundo mensaje de prueba! ?? Ahora tu contador debe subir al n�mero 2 ????",
+    "timestamp": 1792248709957,
+    "read": false
   }
 ]

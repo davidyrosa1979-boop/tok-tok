@@ -3263,6 +3263,58 @@ function setupEventListeners() {
     btnStayPrivate.addEventListener("click", stayInPrivateRoom);
   }
 
+  // Botón Registrarse / Crear otra cuenta desde el lobby de entrada
+  const btnOverlayRegister = document.getElementById("btnOverlayRegister");
+  if (btnOverlayRegister) {
+    btnOverlayRegister.addEventListener("click", () => {
+      // Mostrar la cruz de cerrar si el usuario ya está registrado
+      const closeRegBtn = document.getElementById("closeMandatoryRegisterBtn");
+      if (closeRegBtn) {
+        closeRegBtn.style.display = isUserRegistered() ? "block" : "none";
+      }
+
+      // Activar la pestaña de Registrarse (Nuevo Usuario)
+      const tabRegisterBtn = document.getElementById("authTabRegisterBtn");
+      if (tabRegisterBtn) tabRegisterBtn.click();
+
+      // Limpiar campos del formulario para facilitar registrar una cuenta nueva sin residuos
+      const nameInput = document.getElementById("mandRegName");
+      const emailInput = document.getElementById("mandRegEmail");
+      const handleInput = document.getElementById("mandRegHandle");
+      const bioInput = document.getElementById("mandRegBio");
+      const termsCheckbox = document.getElementById("mandRegTerms");
+      const errorBox = document.getElementById("mandRegError");
+
+      if (nameInput) nameInput.value = "";
+      if (emailInput) emailInput.value = "";
+      if (handleInput) handleInput.value = "";
+      if (bioInput) bioInput.value = "";
+      if (termsCheckbox) termsCheckbox.checked = false;
+      if (errorBox) {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+      }
+
+      openModal("mandatoryRegisterModal");
+    });
+  }
+
+  const closeMandatoryRegisterBtn = document.getElementById("closeMandatoryRegisterBtn");
+  if (closeMandatoryRegisterBtn) {
+    closeMandatoryRegisterBtn.addEventListener("click", () => {
+      closeModal("mandatoryRegisterModal");
+    });
+  }
+
+  const mandRegModalEl = document.getElementById("mandatoryRegisterModal");
+  if (mandRegModalEl) {
+    mandRegModalEl.addEventListener("click", (e) => {
+      if (e.target === mandRegModalEl && isUserRegistered()) {
+        closeModal("mandatoryRegisterModal");
+      }
+    });
+  }
+
   const btnBannerEnterDyr = document.getElementById("btnBannerEnterDyr");
   if (btnBannerEnterDyr) {
     btnBannerEnterDyr.addEventListener("click", requestStageJoin);
@@ -3859,6 +3911,8 @@ function leaveLiveRoomToLobby() {
 function checkMandatoryRegistration() {
   if (!isUserRegistered()) {
     TokTokState.isJoinedRoom = false;
+    const closeRegBtn = document.getElementById("closeMandatoryRegisterBtn");
+    if (closeRegBtn) closeRegBtn.style.display = "none";
     openModal("mandatoryRegisterModal");
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !isUserRegistered()) {
@@ -4166,12 +4220,15 @@ function activateAccount(state) {
   updateCoinsDisplay();
   renderVideoGrid();
 
-  // Cerrar modales de verificación
+  // Cerrar modales de verificación y registro
   const verifyModal = document.getElementById("emailVerificationModal");
   if (verifyModal) verifyModal.classList.remove("show");
 
   const inboxModal = document.getElementById("emailInboxSimulatorModal");
   if (inboxModal) inboxModal.classList.remove("show");
+
+  const regModal = document.getElementById("mandatoryRegisterModal");
+  if (regModal) regModal.classList.remove("show");
 
   hideIncomingEmailToast();
 

@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=33">
+  <link rel="stylesheet" href="styles.css?v=37">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -391,6 +391,9 @@
         <button type="button" class="btn-lobby-switch-room" id="btnLobbySwitchRoom">
           🏠 Ver Otras Salas / Crear Mi Sala
         </button>
+        <button type="button" class="btn-lobby-register" id="btnOverlayRegister">
+          📝 Registrarse (Crear otra cuenta)
+        </button>
       </div>
 
       <div class="entrance-notice">
@@ -417,6 +420,7 @@
             <span class="modal-subtitle">Regístrate para acceder a la sala en vivo (Solo mayores de 18 años)</span>
           </div>
         </div>
+        <button type="button" class="modal-close-btn" id="closeMandatoryRegisterBtn" style="display: none;" title="Cerrar">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -1517,6 +1521,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>
