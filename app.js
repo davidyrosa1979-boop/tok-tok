@@ -601,8 +601,9 @@ function setupLocalAudioDetection(stream) {
 }
 
 function renderSimulatedLocalCamera(canvas) {
-  if (!canvas) return;
+  if (!canvas || typeof canvas.getContext !== "function") return;
   const ctx = canvas.getContext("2d");
+  if (!ctx) return;
   let frame = 0;
 
   function drawSimulatedCamera() {
@@ -1932,6 +1933,14 @@ function hasModerationPrivileges() {
   return isCreator || isHost || isMod;
 }
 
+function isOfficialCreator(user = TokTokState.localUser) {
+  if (!user) return false;
+  return !!user.isCreator ||
+    (user.email && user.email.toLowerCase().trim() === "davidyrosa1979@gmail.com") ||
+    (user.handle && user.handle.toLowerCase().replace('@', '').trim() === "dyr") ||
+    (user.name && user.name.toLowerCase().trim() === "dyr");
+}
+
 // Control dinámico de visibilidad del botón de Moderación (Seguridad y Privacidad)
 function updateModeratorAccessUI() {
   const hasAccess = hasModerationPrivileges();
@@ -1942,7 +1951,7 @@ function updateModeratorAccessUI() {
     dockHostControlBtn.style.display = hasAccess ? "inline-flex" : "none";
     if (dockModStatusPill) {
       const isCreator = isOfficialCreator();
-      const isHost = TokTokState.localUser.role === "host" || TokTokState.localUser.isHost;
+      const isHost = !!(TokTokState.localUser && (TokTokState.localUser.role === "host" || TokTokState.localUser.isHost));
       dockModStatusPill.textContent = isCreator ? "CREADOR" : (isHost ? "HOST" : "MOD");
     }
   }
