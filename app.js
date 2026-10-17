@@ -1412,19 +1412,24 @@ function renderHostControlModal() {
       regListEl.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; padding: 6px;">No hay otros usuarios registrados actualmente.</div>`;
     } else {
       usersToDelete.forEach(u => {
+        const cleanHandle = String(u.handle || 'usuario').replace(/^@/, '');
+        const safeHandle = cleanHandle.includes('@') ? cleanHandle.split('@')[0] : cleanHandle;
+        const rawName = String(u.name || 'Usuario');
+        const safeName = rawName.includes('@') ? rawName.split('@')[0] : rawName;
+
         const item = document.createElement("div");
         item.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); gap: 10px;";
         item.innerHTML = `
           <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
             <div style="width: 28px; height: 28px; border-radius: 50%; background: ${u.avatarBg || '#fe2c55'}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; color: #fff; flex-shrink: 0;">
-              ${(u.name || "U").substring(0, 2).toUpperCase()}
+              ${safeName.substring(0, 2).toUpperCase()}
             </div>
             <div style="min-width: 0;">
-              <strong style="font-size: 12px; color: #fff; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name} (${u.handle})</strong>
-              <span style="font-size: 10px; color: var(--text-muted);"><span style="color: ${u.status === 'online' ? '#00e676' : 'var(--text-muted)'}; font-weight: 600;">${u.status === 'online' ? '🟢 Conectado' : '⚪ Desconectado'}</span> • Rol: ${u.role === 'vip' ? '🌟 VIP' : 'Miembro'}</span>
+              <strong style="font-size: 12px; color: #fff; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeName} (@${safeHandle})</strong>
+              <span style="font-size: 10px; color: var(--text-muted);"><span style="color: ${u.status === 'online' ? '#00e676' : 'var(--text-muted)'}; font-weight: 600;">${u.status === 'online' ? '🟢 Conectado' : '⚪ Desconectado'}</span> • Rol: ${u.role === 'vip' ? '🌟 VIP' : 'Miembro'} • <span style="color: #25f4ee; font-weight: 700;">🔒 RGPD</span></span>
             </div>
           </div>
-          <button type="button" style="background: #fe2c55; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; flex-shrink: 0;" onclick="hostPermanentlyDeleteUser('${u.id}', '${u.handle}', '${u.name}')">
+          <button type="button" style="background: #fe2c55; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; flex-shrink: 0;" onclick="hostPermanentlyDeleteUser('${u.id}', '${safeHandle}', '${safeName}')">
             🗑️ Expulsar y Eliminar
           </button>
         `;
@@ -3465,8 +3470,17 @@ window.addEventListener("beforeinstallprompt", (e) => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log("PWA Service Worker registrado con éxito."))
+      .then((reg) => {
+        reg.update().catch(() => {});
+      })
       .catch((err) => console.log("Service Worker no registrado:", err));
+  });
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!window._swReloaded) {
+      window._swReloaded = true;
+      window.location.reload();
+    }
   });
 }
 

@@ -3,12 +3,12 @@
  * Actualización: Verificación obligatoria de correo con código PIN y buzón simulado + Nuevo diseño móvil limpio y ordenado.
  */
 
-const CACHE_NAME = "toktok-pwa-v27";
+const CACHE_NAME = "toktok-pwa-v28";
 const ASSETS_TO_CACHE = [
   "./",
-  "./index.html?v=27",
-  "./styles.css?v=27",
-  "./app.js?v=27",
+  "./index.html?v=28",
+  "./styles.css?v=28",
+  "./app.js?v=28",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
@@ -36,10 +36,16 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Network first for html to always get the latest layout and verification workflow
-  if (e.request.mode === 'navigate' || e.request.destination === 'document') {
+  // Network first para documentos, scripts y estilos para que los móviles reciban siempre la versión actualizada al instante
+  if (e.request.mode === 'navigate' || e.request.destination === 'document' || e.request.destination === 'script' || e.request.destination === 'style') {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match("./index.html"))
+      fetch(e.request).then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone)).catch(() => {});
+        }
+        return response;
+      }).catch(() => caches.match(e.request))
     );
     return;
   }
