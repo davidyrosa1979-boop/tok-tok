@@ -801,7 +801,7 @@ function createHostSeatElement() {
   } else {
     // Si el usuario local es un Invitado (Rosa), en el asiento 0 ve la cámara del Host (DYR)
     slot.innerHTML = `
-      <video id="hostRemoteVideo" class="video-media-element" autoplay playsinline style="display:block; width: 100%; height: 100%; object-fit: cover;"></video>
+      <video id="hostRemoteVideo" class="video-media-element" autoplay playsinline muted style="display:block; width: 100%; height: 100%; object-fit: cover;"></video>
       <div class="video-off-placeholder" id="localVideoOffHolder" style="display: none;">
         <div class="avatar-disc" style="background: linear-gradient(135deg, #ffd700, #ff8c00); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">
           <div class="avatar-inner-img" style="color: #000; font-weight: 900;">👑</div>
@@ -880,7 +880,7 @@ function createOccupiedSeatElement(guest, seatIndex) {
   } else {
     // Es otro usuario remoto conectado en vivo (Rosa, Pikachu, etc.)
     slot.innerHTML = `
-      <video class="video-media-element guest-video-player" id="video-guest-${seatIndex}" autoplay playsinline style="display: block; width: 100%; height: 100%; object-fit: cover;"></video>
+      <video class="video-media-element guest-video-player" id="video-guest-${seatIndex}" autoplay playsinline muted style="display: block; width: 100%; height: 100%; object-fit: cover;"></video>
       <div class="video-off-placeholder" id="guestVideoOff-${seatIndex}" style="display: none;">
         <div class="avatar-disc" style="background: ${guest.avatarBg}">
           <div class="avatar-inner-img">${initial}</div>
@@ -3829,6 +3829,22 @@ function leaveLiveRoomToLobby() {
   TokTokState.localUser.cameraOn = false;
   TokTokState.localUser.micOn = false;
 
+  if (liveAudioProcessor) {
+    try { liveAudioProcessor.disconnect(); } catch (_) {}
+    liveAudioProcessor = null;
+  }
+  if (liveAudioSource) {
+    try { liveAudioSource.disconnect(); } catch (_) {}
+    liveAudioSource = null;
+  }
+  for (const [uid, pipe] of userAudioPipelines.entries()) {
+    try {
+      if (pipe.gainNode) pipe.gainNode.disconnect();
+      if (pipe.filterNode) pipe.filterNode.disconnect();
+    } catch (_) {}
+  }
+  userAudioPipelines.clear();
+
   const localVid = document.getElementById("localUserVideo");
   if (localVid) localVid.srcObject = null;
 
@@ -4731,21 +4747,22 @@ function handleIncomingCameraFrame(data) {
 // ===================================================================
 let liveAudioProcessor = null;
 let liveAudioSource = null;
-let speechHangover = 0; // Hangover VAD anti-cortes (~350ms)
-const userAudioPipelines = new Map(); // userId -> { nextPlayTime, gainNode, lastSeen }
+let speechHangover = 0; // Hangover VAD anti-cortes (~430ms)
+const userAudioPipelines = new Map(); // userId -> { nextPlayTime, gainNode, filterNode, lastSeen }
 let masterAudioCompressor = null;
 
 function getMasterCompressor(ctx) {
   if (!masterAudioCompressor || masterAudioCompressor.context !== ctx) {
     masterAudioCompressor = ctx.createDynamicsCompressor();
-    masterAudioCompressor.threshold.setValueAtTime(-14, ctx.currentTime);
-    masterAudioCompressor.knee.setValueAtTime(10, ctx.currentTime);
-    masterAudioCompressor.ratio.setValueAtTime(12, ctx.currentTime);
-    masterAudioCompressor.attack.setValueAtTime(0.002, ctx.currentTime);
-    masterAudioCompressor.release.setValueAtTime(0.08, ctx.currentTime);
+    // LIMITADOR TRANSPARENTE DE ESTUDIO (Evita saturación digital en mezclas de 3+ personas sin aplastar ni comprimir la voz natural)
+    masterAudioCompressor.threshold.setValueAtTime(-1.5, ctx.currentTime);
+    masterAudioCompressor.knee.setValueAtTime(4, ctx.currentTime);
+    masterAudioCompressor.ratio.setValueAtTime(8, ctx.currentTime);
+    masterAudioCompressor.attack.setValueAtTime(0.003, ctx.currentTime);
+    masterAudioCompressor.release.setValueAtTime(0.12, ctx.currentTime);
 
     const masterCeiling = ctx.createGain();
-    masterCeiling.gain.setValueAtTime(0.85, ctx.currentTime);
+    masterCeiling.gain.setValueAtTime(0.95, ctx.currentTime);
     masterAudioCompressor.connect(masterCeiling);
     masterCeiling.connect(ctx.destination);
   }
@@ -4800,7 +4817,7 @@ async function startLiveAudioCapture(stream = null) {
     }
 
     liveAudioSource = ctx.createMediaStreamSource(stream);
-    // Buffer size 2048: latencia óptima y compatible con todos los navegadores móviles
+    // Buffer size 2048: latencia óptima (~43ms) y compatible con todos los navegadores móviles
     liveAudioProcessor = ctx.createScriptProcessor(2048, 1, 1);
 
     liveAudioProcessor.onaudioprocess = (e) => {
@@ -4816,9 +4833,9 @@ async function startLiveAudioCapture(stream = null) {
       }
       const rms = Math.sqrt(sum / input.length);
 
-      const VAD_THRESHOLD = 0.002; // Sensibilidad calibrada para voz natural
+      const VAD_THRESHOLD = 0.0015; // Sensibilidad calibrada para captar voz natural y susurros sin cortes
       if (rms >= VAD_THRESHOLD) {
-        speechHangover = 8; // Mantener vivo durante ~350ms tras cada palabra
+        speechHangover = 10; // Mantener vivo durante ~430ms tras cada palabra para colas naturales
       } else if (speechHangover > 0) {
         speechHangover--;
       } else {
@@ -4880,8 +4897,8 @@ function handleIncomingAudioChunk(data) {
   if (!data || !data.pcm || !data.userId) return;
   if (data.userId === TokTokState.localUser.id) return;
 
-  // Silencio total si el receptor no está dentro del escenario
-  if (!isUserOnStage()) return;
+  // Permitir escuchar a cualquier persona dentro de la sala en vivo (espectadores e invitados)
+  if (!TokTokState.isJoinedRoom) return;
 
   // Si el modal de registro obligatorio o verificación están abiertos, silencio total
   const regModal = document.getElementById("mandatoryRegisterModal");
@@ -4936,32 +4953,63 @@ function handleIncomingAudioChunk(data) {
     const audioBuffer = ctx.createBuffer(1, float32Array.length, sampleRate);
     audioBuffer.getChannelData(0).set(float32Array);
 
-    // PIPELINE INDEPENDIENTE POR USUARIO (Resuelve solapamiento y petardeo con 2 o más personas)
+    // PIPELINE INDEPENDIENTE POR USUARIO (Resuelve solapamiento, acoples y clipping de 3+ personas)
     let pipeline = userAudioPipelines.get(data.userId);
     if (!pipeline) {
+      // Filtro pasa-altos vocal a 85Hz (Q 0.7) para eliminar retumbes graves mecánicos de móvil y mesas
+      const voiceFilter = ctx.createBiquadFilter();
+      voiceFilter.type = "highpass";
+      voiceFilter.frequency.setValueAtTime(85, ctx.currentTime);
+      voiceFilter.Q.setValueAtTime(0.7, ctx.currentTime);
+
       const userGain = ctx.createGain();
-      userGain.gain.value = 0.70; // Margen dinámico limpio para mezcla multi-usuario sin distorsión ni clipping digital
+      userGain.gain.setValueAtTime(0.55, ctx.currentTime);
+
+      voiceFilter.connect(userGain);
       userGain.connect(getMasterCompressor(ctx));
+
       pipeline = {
         nextPlayTime: 0,
         gainNode: userGain,
+        filterNode: voiceFilter,
         lastSeen: Date.now()
       };
       userAudioPipelines.set(data.userId, pipeline);
     }
     pipeline.lastSeen = Date.now();
 
+    // Limpieza de pipelines inactivos (>10s) y recuento de oradores activos para auto-ganancia
+    const nowTs = Date.now();
+    let activeSpeakers = 0;
+    for (const [uid, p] of userAudioPipelines.entries()) {
+      if (nowTs - p.lastSeen > 10000) {
+        try {
+          if (p.gainNode) p.gainNode.disconnect();
+          if (p.filterNode) p.filterNode.disconnect();
+        } catch (_) {}
+        userAudioPipelines.delete(uid);
+      } else if (nowTs - p.lastSeen < 2500) {
+        activeSpeakers++;
+      }
+    }
+
+    // AUTO-ESCALADO INTELIGENTE DE GANANCIA MULTI-ORADOR:
+    // Evita saturación y distorsión cuando 2, 3 o más personas hablan a la vez
+    const targetGain = Math.max(0.35, Math.min(0.68, 0.72 / Math.sqrt(Math.max(1, activeSpeakers))));
+    pipeline.gainNode.gain.setTargetAtTime(targetGain, ctx.currentTime, 0.05);
+
+    // Resincronización del buffer de jitter:
     const now = ctx.currentTime;
     if (pipeline.nextPlayTime < now) {
-      pipeline.nextPlayTime = now + 0.04; // 40ms de jitter buffer inicial por usuario
-    } else if (pipeline.nextPlayTime - now > 0.25) {
-      // Si la cola se desborda (>250ms acumulados por ráfagas de red), descartamos el chunk atrasado en vez de solapar voces
-      return;
+      pipeline.nextPlayTime = now + 0.02; // 20ms de buffer inicial óptimo
+    } else if (pipeline.nextPlayTime - now > 0.35) {
+      // Si hubo ráfagas de red o congestión de paquetes, resincronizar suavemente sin tirar audio
+      pipeline.nextPlayTime = now + 0.03;
     }
 
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(pipeline.gainNode);
+    source.connect(pipeline.filterNode);
     source.start(pipeline.nextPlayTime);
 
     pipeline.nextPlayTime += audioBuffer.duration;
@@ -5229,9 +5277,9 @@ async function initWebRTCConnection(targetUserId, shouldOffer) {
   const pc = new RTCPeerConnection(rtcIceConfig);
   rtcPeerConnections.set(targetUserId, pc);
 
-  // Adjuntar todas las pistas locales (Audio Y Video)
+  // Adjuntar únicamente pistas locales de Video en WebRTC (el audio se transmite por el relay PCM optimizado sin acoples ni duplicados)
   if (TokTokState.localUser.mediaStream) {
-    TokTokState.localUser.mediaStream.getTracks().forEach(track => {
+    TokTokState.localUser.mediaStream.getVideoTracks().forEach(track => {
       pc.addTrack(track, TokTokState.localUser.mediaStream);
     });
   }
@@ -5240,7 +5288,9 @@ async function initWebRTCConnection(targetUserId, shouldOffer) {
   pc.ontrack = (event) => {
     const stream = event.streams[0];
     remoteStreams.set(targetUserId, stream);
-    playRemoteAudioStream(stream);
+    if (stream && stream.getAudioTracks) {
+      stream.getAudioTracks().forEach(t => { t.enabled = false; });
+    }
     attachRemoteStreamToSeat(targetUserId, stream);
   };
 
@@ -5266,7 +5316,7 @@ async function initWebRTCConnection(targetUserId, shouldOffer) {
   if (shouldOffer) {
     try {
       const offer = await pc.createOffer({
-        offerToReceiveAudio: true,
+        offerToReceiveAudio: false,
         offerToReceiveVideo: true
       });
       await pc.setLocalDescription(offer);
@@ -5302,7 +5352,7 @@ async function handleWebRTCSignal(data) {
     rtcPeerConnections.set(peerId, pc);
 
     if (TokTokState.localUser.mediaStream) {
-      TokTokState.localUser.mediaStream.getTracks().forEach(track => {
+      TokTokState.localUser.mediaStream.getVideoTracks().forEach(track => {
         pc.addTrack(track, TokTokState.localUser.mediaStream);
       });
     }
@@ -5310,7 +5360,9 @@ async function handleWebRTCSignal(data) {
     pc.ontrack = (event) => {
       const stream = event.streams[0];
       remoteStreams.set(peerId, stream);
-      playRemoteAudioStream(stream);
+      if (stream && stream.getAudioTracks) {
+        stream.getAudioTracks().forEach(t => { t.enabled = false; });
+      }
       attachRemoteStreamToSeat(peerId, stream);
     };
 
@@ -5330,9 +5382,9 @@ async function handleWebRTCSignal(data) {
     if (data.type === "offer") {
       await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
 
-      // Asegurar que transmitimos nuestras pistas locales al anfitrión
+      // Asegurar que transmitimos únicamente video al anfitrión
       if (TokTokState.localUser.mediaStream) {
-        TokTokState.localUser.mediaStream.getTracks().forEach(track => {
+        TokTokState.localUser.mediaStream.getVideoTracks().forEach(track => {
           const senders = pc.getSenders();
           if (!senders.some(s => s.track && s.track.kind === track.kind)) {
             pc.addTrack(track, TokTokState.localUser.mediaStream);
@@ -5341,7 +5393,7 @@ async function handleWebRTCSignal(data) {
       }
 
       const answer = await pc.createAnswer({
-        offerToReceiveAudio: true,
+        offerToReceiveAudio: false,
         offerToReceiveVideo: true
       });
       await pc.setLocalDescription(answer);
@@ -5369,6 +5421,8 @@ function attachRemoteStreamToSeat(peerId, stream) {
   if (peerId === "user_dyr_creator") {
     const hostVideo = document.getElementById("hostRemoteVideo");
     if (hostVideo) {
+      hostVideo.muted = true;
+      hostVideo.defaultMuted = true;
       if (hostVideo.srcObject !== stream) {
         hostVideo.srcObject = stream;
       }
@@ -5396,6 +5450,8 @@ function attachRemoteStreamToSeat(peerId, stream) {
   if (targetSeatIndex > 0 && targetSeatIndex <= 15) {
     const guestVideo = document.getElementById(`video-guest-${targetSeatIndex}`);
     if (guestVideo) {
+      guestVideo.muted = true;
+      guestVideo.defaultMuted = true;
       if (guestVideo.srcObject !== stream) {
         guestVideo.srcObject = stream;
       }
@@ -5411,35 +5467,8 @@ function attachRemoteStreamToSeat(peerId, stream) {
 }
 
 function playRemoteAudioStream(stream) {
-  let remoteAudio = document.getElementById("tokLiveRemoteAudio");
-  if (!remoteAudio) {
-    remoteAudio = document.createElement("audio");
-    remoteAudio.id = "tokLiveRemoteAudio";
-    remoteAudio.autoplay = true;
-    remoteAudio.playsInline = true;
-    document.body.appendChild(remoteAudio);
-  }
-  remoteAudio.srcObject = stream;
-  remoteAudio.muted = true; // El audio unificado se reproduce a través del pipeline Web Audio con control dinámico y anti-petardeo
-  remoteAudio.play().catch(e => {
-    console.debug("Interacción requerida para reproducir audio:", e);
-  });
+  // WebRTC solo transmite video; el audio se procesa exclusivamente en el pipeline Web Audio con ecualizador, auto-gain y limitador
 }
-
-// Desbloqueo de audio en navegadores móviles (iOS Safari)
-window.addEventListener("click", () => {
-  const audio = document.getElementById("tokLiveRemoteAudio");
-  if (audio && audio.paused && audio.srcObject) {
-    audio.play().catch(() => {});
-  }
-}, { passive: true });
-
-window.addEventListener("touchstart", () => {
-  const audio = document.getElementById("tokLiveRemoteAudio");
-  if (audio && audio.paused && audio.srcObject) {
-    audio.play().catch(() => {});
-  }
-}, { passive: true });
 
 // ===================================================================
 // SISTEMA DE BLOQUEO Y EXPULSIÓN DE USUARIOS
