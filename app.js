@@ -2172,19 +2172,60 @@ function loadDmInbox(filterQuery = "") {
 }
 
 function updateDmUnreadBadges(count) {
-  const headerBadge = document.getElementById("dmHeaderUnreadBadge");
   const dockBadge = document.getElementById("dmDockUnreadBadge");
+  const dockStatusPill = document.getElementById("dockInboxStatusPill");
 
-  [headerBadge, dockBadge].forEach(b => {
-    if (b) {
-      if (count > 0) {
-        b.textContent = count > 99 ? "99+" : count;
-        b.style.display = "inline-flex";
-      } else {
-        b.style.display = "none";
-      }
+  if (dockBadge) {
+    if (count > 0) {
+      dockBadge.textContent = count > 99 ? "99+" : count;
+      dockBadge.style.display = "inline-flex";
+    } else {
+      dockBadge.style.display = "none";
     }
-  });
+  }
+
+  if (dockStatusPill) {
+    if (count > 0) {
+      dockStatusPill.textContent = count === 1 ? "1 NUEVO" : `${count} NUEVOS`;
+      dockStatusPill.style.display = "inline-block";
+      dockStatusPill.style.background = "#fe2c55";
+      dockStatusPill.style.color = "#fff";
+    } else {
+      dockStatusPill.style.display = "none";
+    }
+  }
+}
+
+function showIncomingDmBanner(senderHandle, text) {
+  const banner = document.getElementById("incomingDmBanner");
+  const senderEl = document.getElementById("dmBannerSender");
+  const textEl = document.getElementById("dmBannerText");
+  const openBtn = document.getElementById("dmBannerOpenBtn");
+  if (!banner || !senderEl || !textEl) return;
+
+  const cleanHandle = String(senderHandle || "amigo").replace(/^@/, "");
+  senderEl.textContent = `@${cleanHandle}`;
+  textEl.textContent = text || "Te envió un mensaje privado";
+  banner.style.display = "flex";
+
+  const triggerOpen = (e) => {
+    if (e) e.stopPropagation();
+    banner.style.display = "none";
+    openInboxModal();
+  };
+
+  if (openBtn) openBtn.onclick = triggerOpen;
+  banner.onclick = triggerOpen;
+
+  if (navigator.vibrate) {
+    try { navigator.vibrate([100, 50, 100]); } catch (_) {}
+  }
+  playSoundFx("chime");
+
+  clearTimeout(window.__dmBannerTimer);
+  window.__dmBannerTimer = setTimeout(() => {
+    banner.style.display = "none";
+  }, 6000);
 }
 
 function renderInboxThreads(filterQuery = "") {
@@ -4135,6 +4176,10 @@ function initRealtimeSync() {
   pollSync();
   setInterval(pollSync, 1000);
 
+  // Polling automático de mensajes privados cada 3 segundos para actualización inmediata del Buzón
+  loadDmInbox();
+  setInterval(loadDmInbox, 3000);
+
   // Heartbeat de presencia cada 2.5 segundos
   sendPresenceHeartbeat();
   setInterval(sendPresenceHeartbeat, 2500);
@@ -4455,7 +4500,7 @@ function handleRealtimeEvent(type, data) {
         renderDmMessages(senderThreadKey);
         playSoundFx("pop");
       } else {
-        playSoundFx("chime");
+        showIncomingDmBanner(data.senderHandle, data.text);
       }
       loadDmInbox();
     }
@@ -5685,10 +5730,7 @@ function shareCurrentRoom() {
   }
 }
 
-// ===================================================================
-// INICIALIZACIÓN PRINCIPAL
-// ===================================================================
-window.addEventListener("DOMContentLoaded", () => {
+function initTokTokApp() {
   loadRegisteredUsers();
   loadDmInbox();
   loadLocalProfile();
@@ -5705,4 +5747,10 @@ window.addEventListener("DOMContentLoaded", () => {
   initRealtimeSync();
 
   addChatMessage("TokTokBot", `👋 ¡Bienvenido a ${TokTokState.roomName || 'Tok Tok Live'} (+18)! Sala independiente en tiempo real lista.`);
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initTokTokApp);
+} else {
+  initTokTokApp();
+}

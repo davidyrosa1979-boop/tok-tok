@@ -2115,18 +2115,33 @@ body.toktok-theme {
     white-space: nowrap;
   }
 
-  /* Contenedor Principal en Móvil */
+  /* Contenedor Principal en Móvil: Escenario de video siempre visible y espacioso */
   .main-stage {
     flex-direction: column;
     flex: 1;
+    min-height: 0;
     overflow: hidden;
     position: relative;
-    height: calc(100% - 120px);
+    width: 100%;
+  }
+
+  /* Por defecto en móvil: Escenario SIEMPRE visible y sidebar oculto */
+  .video-stage-container {
+    display: flex !important;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .live-sidebar {
+    display: none !important;
   }
 
   /* Control de Vistas Móvil: Solo una vista activa a la vez para máxima amplitud */
   .main-stage[data-active-view="stage"] .video-stage-container {
-    display: flex;
+    display: flex !important;
     flex: 1;
     height: 100%;
     overflow-y: auto;
@@ -3853,6 +3868,69 @@ body.toktok-theme {
   background: rgba(37, 244, 238, 0.25) !important;
   border-color: #25f4ee !important;
   box-shadow: 0 0 12px rgba(37, 244, 238, 0.3);
+}
+
+/* Notificación Flotante de Nuevo Mensaje Privado (DM Toast) */
+.incoming-dm-banner {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  background: rgba(18, 20, 32, 0.96);
+  border: 1.5px solid var(--tok-pink);
+  box-shadow: 0 8px 32px rgba(254, 44, 85, 0.45);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 90vw;
+  animation: slideDownToast 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.incoming-dm-banner .dm-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-banner-icon {
+  font-size: 22px;
+}
+
+.dm-banner-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.dm-banner-sender {
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--tok-cyan);
+}
+
+.dm-banner-text {
+  font-size: 11px;
+  color: #fff;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-banner-open-btn {
+  background: var(--tok-pink);
+  color: #fff;
+  border: none;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
 }
 
 .modal-inbox-card {

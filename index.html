@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -143,6 +143,18 @@
       </div>
     </div>
 
+    <!-- Notificación Flotante de Nuevo Mensaje Privado -->
+    <div class="incoming-dm-banner" id="incomingDmBanner" style="display: none;">
+      <div class="dm-banner-inner">
+        <span class="dm-banner-icon">📬</span>
+        <div class="dm-banner-info">
+          <span class="dm-banner-sender" id="dmBannerSender">@usuario</span>
+          <span class="dm-banner-text" id="dmBannerText">Te envió un mensaje privado</span>
+        </div>
+        <button class="dm-banner-open-btn" id="dmBannerOpenBtn">Abrir</button>
+      </div>
+    </div>
+
     <!-- Barra Segmentada Móvil para Navegación Cómoda y Ordenada -->
     <nav class="mobile-segmented-bar" id="mobileSegmentedBar">
       <button class="mob-seg-btn active" data-view="stage" id="mobTabStageBtn">
@@ -160,7 +172,7 @@
     </nav>
 
     <!-- Área de Contenido: Cuadrícula de Video + Panel Lateral de la Sala -->
-    <main class="main-stage" id="mainStageContainer">
+    <main class="main-stage" id="mainStageContainer" data-active-view="stage">
       
       <!-- Escenario de Video (Host + hasta 15 asientos de invitados) -->
       <section class="video-stage-container" id="videoStageArea">
@@ -300,6 +312,7 @@
             <span class="dm-unread-badge" id="dmDockUnreadBadge" style="display: none;">0</span>
           </span>
           <span class="dock-label">Buzón</span>
+          <span class="dock-status" id="dockInboxStatusPill" style="display: none; background: #fe2c55; color: #fff; font-weight: 800;">0</span>
         </button>
 
         <!-- Botón para Bajarse del Escenario (Visible cuando el usuario está en el escenario) -->
@@ -1509,6 +1522,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=29"></script>
+  <script src="app.js?v=30"></script>
 </body>
 </html>
