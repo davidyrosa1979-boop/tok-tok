@@ -3299,6 +3299,46 @@ function setupEventListeners() {
     });
   }
 
+  // Función para Cambiar de Usuario e iniciar sesión con otro correo
+  function openSwitchUserModal() {
+    const closeRegBtn = document.getElementById("closeMandatoryRegisterBtn");
+    if (closeRegBtn) {
+      closeRegBtn.style.display = isUserRegistered() ? "block" : "none";
+    }
+
+    const tabLoginBtn = document.getElementById("authTabLoginBtn");
+    if (tabLoginBtn) tabLoginBtn.click();
+
+    const loginInp = document.getElementById("loginEmailInput");
+    const loginError = document.getElementById("loginError");
+    if (loginInp) {
+      loginInp.value = "";
+      setTimeout(() => loginInp.focus(), 250);
+    }
+    if (loginError) {
+      loginError.style.display = "none";
+      loginError.textContent = "";
+    }
+
+    closeModal("profileModal");
+    openModal("mandatoryRegisterModal");
+  }
+
+  const btnOverlaySwitchUser = document.getElementById("btnOverlaySwitchUser");
+  if (btnOverlaySwitchUser) {
+    btnOverlaySwitchUser.addEventListener("click", openSwitchUserModal);
+  }
+
+  const headerSwitchUserBtn = document.getElementById("headerSwitchUserBtn");
+  if (headerSwitchUserBtn) {
+    headerSwitchUserBtn.addEventListener("click", openSwitchUserModal);
+  }
+
+  const btnProfileSwitchUser = document.getElementById("btnProfileSwitchUser");
+  if (btnProfileSwitchUser) {
+    btnProfileSwitchUser.addEventListener("click", openSwitchUserModal);
+  }
+
   const closeMandatoryRegisterBtn = document.getElementById("closeMandatoryRegisterBtn");
   if (closeMandatoryRegisterBtn) {
     closeMandatoryRegisterBtn.addEventListener("click", () => {

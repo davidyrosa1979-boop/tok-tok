@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=39">
+  <link rel="stylesheet" href="styles.css?v=40">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -102,6 +102,12 @@
         <button class="btn-pill btn-profile" id="openProfileModalBtn" title="Mi perfil de usuario">
           <span class="profile-avatar-mini" id="headerProfileAvatar" style="background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); color: #000; font-weight: 900;">👑</span>
           <span id="headerProfileName">DYR (Creador)</span>
+        </button>
+
+        <!-- Botón Cambiar de Usuario -->
+        <button class="btn-pill btn-switch-user" id="headerSwitchUserBtn" title="Cambiar de usuario o iniciar sesión con otro correo">
+          <span class="btn-icon">🔄</span>
+          <span>Cambiar Usuario</span>
         </button>
 
         <!-- Botón Normas de la Comunidad -->
@@ -393,6 +399,9 @@
         </button>
         <button type="button" class="btn-lobby-register" id="btnOverlayRegister">
           📝 Registrarse (Crear otra cuenta)
+        </button>
+        <button type="button" class="btn-lobby-switch-user" id="btnOverlaySwitchUser">
+          🔄 Cambiar de Usuario
         </button>
       </div>
 
@@ -901,10 +910,12 @@
 
           <button type="submit" class="btn-primary-action" style="margin-top: 12px;">Guardar Cambios</button>
 
-          <div class="profile-extra-actions" style="margin-top: 16px; border-top: 1px solid var(--border-glass); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-muted);">¿Registrarte con otro correo?</span>
+          <div class="profile-extra-actions" style="margin-top: 16px; border-top: 1px solid var(--border-glass); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-text-action" id="btnProfileSwitchUser" style="color: #25f4ee; font-size: 13px; font-weight: 700; background: none; border: none; cursor: pointer;">
+              🔄 Cambiar de Usuario
+            </button>
             <button type="button" class="btn-text-action" id="resetAccountBtn" style="color: var(--tok-pink); font-size: 12px; font-weight: 700; background: none; border: none; cursor: pointer;">
-              🔄 Cerrar Sesión / Nuevo Registro
+              🚪 Cerrar Sesión
             </button>
           </div>
         </form>
@@ -1538,6 +1549,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=39"></script>
+  <script src="app.js?v=40"></script>
 </body>
 </html>

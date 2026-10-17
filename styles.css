@@ -4524,6 +4524,47 @@ body.toktok-theme {
   transform: scale(0.98);
 }
 
+.btn-lobby-switch-user {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-lobby-switch-user:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #ffd700;
+  color: #ffd700;
+  transform: translateY(-1px);
+}
+
+.btn-lobby-switch-user:active {
+  transform: scale(0.98);
+}
+
+.btn-pill.btn-switch-user {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.btn-pill.btn-switch-user:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #25f4ee;
+  color: #25f4ee;
+}
+
 .rooms-list-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
