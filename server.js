@@ -1685,19 +1685,25 @@ const server = http.createServer(async (req, res) => {
 
   // Marcar mensajes como leídos
   if (pathname === "/api/dm/mark-read" && req.method === "POST") {
-    const { myHandle, otherHandle } = await parseJsonBody(req);
+    const { myHandle, otherHandle, all } = await parseJsonBody(req);
     const me = String(myHandle || "").toLowerCase().replace(/^@/, "").trim();
     const other = String(otherHandle || "").toLowerCase().replace(/^@/, "").trim();
 
-    if (me && other) {
+    if (me) {
       const dms = loadDmsDb();
       let changed = false;
       dms.forEach(m => {
         const s = String(m.senderHandle || "").toLowerCase().replace(/^@/, "").trim();
+        const sId = String(m.senderId || "").toLowerCase();
         const r = String(m.recipientHandle || "").toLowerCase().replace(/^@/, "").trim();
-        if (s === other && r === me && !m.read) {
-          m.read = true;
-          changed = true;
+        const rId = String(m.recipientId || "").toLowerCase();
+
+        const isRecipient = (r === me || rId === me || (me === "dyr" && (r === "dyr" || rId === "user_dyr_creator")));
+        if (isRecipient && !m.read) {
+          if (all || !other || s === other || sId === other || (other === "soporte" && sId.includes("support"))) {
+            m.read = true;
+            changed = true;
+          }
         }
       });
       if (changed) saveDmsDb(dms);

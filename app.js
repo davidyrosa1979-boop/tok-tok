@@ -2313,6 +2313,22 @@ function renderInboxThreads(filterQuery = "") {
   });
 }
 
+function markAllDmsAsRead() {
+  const myHandle = (TokTokState.localUser && TokTokState.localUser.handle) 
+    ? TokTokState.localUser.handle.replace(/^@/, '').toLowerCase().trim() 
+    : "dyr";
+
+  fetch("/api/dm/mark-read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ myHandle, all: true })
+  }).then(() => {
+    updateDmUnreadBadges(0);
+    currentInboxThreads.forEach(t => t.unreadCount = 0);
+    renderInboxThreads();
+  }).catch(() => {});
+}
+
 function openInboxModal() {
   loadDmInbox();
   openModal("inboxModal");
@@ -2339,6 +2355,14 @@ function openPrivateChatWith(user) {
 
   const threadKey = cleanHandle.toLowerCase().replace(/^@/, '');
   
+  // Limpiar conteo no leído de este hilo de inmediato
+  const foundThread = currentInboxThreads.find(t => t.otherUser && t.otherUser.handle && t.otherUser.handle.toLowerCase().replace(/^@/, '') === threadKey);
+  if (foundThread && foundThread.unreadCount > 0) {
+    foundThread.unreadCount = 0;
+    const remainingUnread = currentInboxThreads.reduce((acc, t) => acc + (t.unreadCount || 0), 0);
+    updateDmUnreadBadges(remainingUnread);
+  }
+
   renderDmMessages(threadKey);
   openModal("privateMessageModal");
   if (inputEl) {
@@ -3510,6 +3534,11 @@ function setupEventListeners() {
   const closeInboxModalBtnEl = document.getElementById("closeInboxModalBtn");
   if (closeInboxModalBtnEl) {
     closeInboxModalBtnEl.addEventListener("click", () => closeModal("inboxModal"));
+  }
+
+  const btnMarkAllDms = document.getElementById("btnMarkAllDmsRead");
+  if (btnMarkAllDms) {
+    btnMarkAllDms.addEventListener("click", markAllDmsAsRead);
   }
 
   const btnBackToInbox = document.getElementById("btnBackToInboxFromDm");

@@ -21,7 +21,7 @@
     "recipientHandle": "dyr",
     "text": "�Hola David! ?? Este es tu mensaje privado de prueba para verificar el globo rojo y el contador de mensajes nuevos ???",
     "timestamp": 1792248638340,
-    "read": false
+    "read": true
   },
   {
     "id": "dm_1792248709957_j8dg",
@@ -33,6 +33,6 @@
     "recipientHandle": "dyr",
     "text": "�Segundo mensaje de prueba! ?? Ahora tu contador debe subir al n�mero 2 ????",
     "timestamp": 1792248709957,
-    "read": false
+    "read": true
   }
 ]
