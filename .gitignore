@@ -7,3 +7,4 @@ cloudflared.exe
 *.zip
 *.apk
 .system_generated/
+.env
