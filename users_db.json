@@ -68,5 +68,20 @@
     "bio": "💥 El Supermak oficial en Tok Tok",
     "avatarBg": "linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)",
     "registeredAt": "2026-10-15T12:00:00.000Z"
+  },
+  {
+    "id": "user_1792251140211",
+    "name": "Amigo Yahoo",
+    "handle": "amigoyahoo",
+    "email": "testusuario@yahoo.es",
+    "bio": "Usuario registrado en TokRoom 🌟",
+    "avatarBg": "#fe2c55",
+    "role": "user",
+    "isCreator": false,
+    "isHost": false,
+    "hasInfiniteCoins": false,
+    "coins": 1000,
+    "isEmailVerified": true,
+    "registeredAt": "2026-10-17T15:32:20.211Z"
   }
 ]

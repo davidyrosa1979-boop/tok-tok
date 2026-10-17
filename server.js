@@ -594,7 +594,33 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: false, error: "El nombre y usuario 'DYR' están reservados para el Creador Oficial." }));
     }
 
-    // Generar código de seguridad de 6 dígitos
+    // -----------------------------------------------------------------
+    // ENVÍO DE CÓDIGO DE VERIFICACIÓN POR CORREO
+    // -----------------------------------------------------------------
+    const isYahoo = cleanEmail.includes("@yahoo.") || cleanEmail.endsWith("@ymail.com") || cleanEmail.includes("yahoo");
+
+    if (isYahoo) {
+      // Clave genérica para Yahoo según solicitud
+      pendingVerifications.set(cleanEmail, {
+        pin: "777777",
+        name: cleanName,
+        handle: cleanHandle,
+        bio: bio || "Usuario registrado en TokRoom 🌟",
+        avatarBg: avatarBg || "#fe2c55",
+        expiresAt: Date.now() + 15 * 60 * 1000
+      });
+
+      console.log(`🟣 [Yahoo Registro] Aplicada clave genérica 777777 para ${cleanEmail}`);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({
+        ok: true,
+        email: cleanEmail,
+        isYahoo: true,
+        message: "Para cuentas de correo Yahoo, la clave de verificación es 777777"
+      }));
+    }
+
+    // Para todos los demás correos: generar código aleatorio de 6 dígitos y enviar por correo real
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     pendingVerifications.set(cleanEmail, {
       pin,
@@ -611,14 +637,9 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({
       ok: true,
       email: cleanEmail,
-      provider: emailRes.provider,
+      isYahoo: false,
       delivered: !!emailRes.delivered,
-      simulated: !!emailRes.simulated || !!emailRes.sandbox || !!emailRes.fallback,
-      sandbox: !!emailRes.sandbox,
-      pin: (emailRes.sandbox || emailRes.simulated || emailRes.fallback) ? pin : undefined,
-      message: emailRes.delivered 
-        ? `Hemos enviado tu código de seguridad a ${cleanEmail}` 
-        : `Código de seguridad generado para ${cleanEmail}`
+      message: `Hemos enviado tu código de seguridad a ${cleanEmail}`
     }));
   }
 
@@ -633,19 +654,19 @@ const server = http.createServer(async (req, res) => {
     const pending = pendingVerifications.get(cleanEmail);
     if (!pending) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "No hay ninguna solicitud de verificación pendiente para este correo o ha caducado. Pulsa 'Reenviar código'." }));
+      return res.end(JSON.stringify({ ok: false, error: "No hay ninguna solicitud de verificación pendiente para este correo o ha caducado. Pulsa 'Reenviar nuevo correo'." }));
     }
 
     if (Date.now() > pending.expiresAt) {
       pendingVerifications.delete(cleanEmail);
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "El código de verificación ha caducado (15 minutos). Por favor, pulsa 'Reenviar código'." }));
+      return res.end(JSON.stringify({ ok: false, error: "El código de verificación ha caducado (15 minutos). Por favor, pulsa 'Reenviar nuevo correo'." }));
     }
 
     const isMasterBypass = (cleanCode === "777777" || cleanCode === "123456");
     if (pending.pin !== cleanCode && !isMasterBypass) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "El código de 6 dígitos introducido es incorrecto. Por favor, revisa tu correo electrónico o pulsa 'Mostrar código de respaldo'." }));
+      return res.end(JSON.stringify({ ok: false, error: "El código de 6 dígitos introducido es incorrecto. Por favor, revisa tu correo electrónico." }));
     }
 
     // Código correcto: Registrar usuario en users_db.json

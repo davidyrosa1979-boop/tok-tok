@@ -2939,19 +2939,7 @@ function setupEventListeners() {
     });
   }
 
-  // Botón de Pegado Rápido del Código de Activación
-  const quickPasteBtn = document.getElementById("quickAutoPastePinBtn");
-  if (quickPasteBtn) {
-    quickPasteBtn.addEventListener("click", () => {
-      hideIncomingEmailToast();
-      const pinInput = document.getElementById("verifyPinInput");
-      if (pinInput && pendingVerificationState && pendingVerificationState.pinCode) {
-        pinInput.value = pendingVerificationState.pinCode;
-        const submitBtn = document.getElementById("btnSubmitVerifyCode");
-        if (submitBtn) submitBtn.click();
-      }
-    });
-  }
+
 
   // Botones de Reacción Rápida
   document.querySelectorAll(".reaction-bubble-btn").forEach(btn => {
@@ -3370,19 +3358,7 @@ function setupEventListeners() {
     changeEmailBtn.addEventListener("click", returnToRegistrationForm);
   }
 
-  const btnShowDirectCodeBackup = document.getElementById("btnShowDirectCodeBackup");
-  if (btnShowDirectCodeBackup) {
-    btnShowDirectCodeBackup.addEventListener("click", () => {
-      const pinToUse = pendingVerificationState.pinCode || "777777";
-      const pinInput = document.getElementById("verifyPinInput");
-      const directNoticeBox = document.getElementById("verifyDirectNoticeBox");
-      const directPinDisplay = document.getElementById("verifyDirectPinDisplay");
-      if (pinInput) pinInput.value = pinToUse;
-      if (directPinDisplay) directPinDisplay.textContent = pinToUse;
-      if (directNoticeBox) directNoticeBox.style.display = "block";
-      alert(`⚡ Código de activación: ${pinToUse}\nSe ha rellenado en la casilla. Ya puedes pulsar el botón verde 'Activar Cuenta y Acceder a la Sala'.`);
-    });
-  }
+
 
   // ===================================================================
   // LISTENERS DEL PANEL DE MODERACIÓN, MENÚ CONTEXTUAL Y DMs
@@ -4085,7 +4061,7 @@ function handleMandatoryRegistration(e) {
       email: payload.email,
       bio: payload.bio,
       avatarBg: payload.avatarBg,
-      pinCode: data.pin || "",
+      pinCode: data.isYahoo ? "777777" : "",
       timestamp: Date.now()
     };
 
@@ -4104,21 +4080,18 @@ function handleMandatoryRegistration(e) {
     const verifySentLabel = document.querySelector(".verify-sent-label");
     const verifySubHint = document.querySelector(".verify-sub-hint");
 
-    if (data.pin) {
-      if (pinInput) pinInput.value = data.pin;
-      if (directPinDisplay) directPinDisplay.textContent = data.pin;
-      if (directNoticeBox) directNoticeBox.style.display = "block";
-      if (quickPasteBtn) quickPasteBtn.style.display = "inline-block";
-      if (inboxCodeDisplay) inboxCodeDisplay.textContent = data.pin;
-      if (verifySentLabel) verifySentLabel.textContent = "⚡ Código de activación para tu cuenta:";
-      if (verifySubHint) verifySubHint.innerHTML = "🔔 <strong>Activación Rápida:</strong> Para que no tengas que esperar a tu bandeja de entrada externa, tu código de seguridad se ha cargado automáticamente aquí abajo. Solo pulsa el botón verde <strong>'Verificar y Entrar'</strong>.";
-      showIncomingEmailToast(data.pin);
+    // NUNCA auto-completar el código: el usuario debe introducirlo manualmente
+    if (pinInput) pinInput.value = "";
+    if (directNoticeBox) directNoticeBox.style.display = "none";
+    if (quickPasteBtn) quickPasteBtn.style.display = "none";
+    hideIncomingEmailToast();
+
+    if (data.isYahoo) {
+      if (verifySentLabel) verifySentLabel.textContent = "Cuenta Yahoo detectada:";
+      if (verifySubHint) verifySubHint.innerHTML = "🟣 Para completar el registro con correo Yahoo, introduce el código de seguridad: <strong style='color: #25f4ee; font-size: 15px; letter-spacing: 2px;'>777777</strong>";
     } else {
-      if (pinInput) pinInput.value = "";
-      if (directNoticeBox) directNoticeBox.style.display = "none";
-      if (quickPasteBtn) quickPasteBtn.style.display = "none";
       if (verifySentLabel) verifySentLabel.textContent = "Hemos enviado un código de seguridad a:";
-      if (verifySubHint) verifySubHint.textContent = "Abre tu correo electrónico en tu móvil o navegador, copia el código de 6 números recibido e introdúcelo a continuación.";
+      if (verifySubHint) verifySubHint.innerHTML = `Abre tu correo electrónico en tu móvil o navegador (<strong style="color: #fff;">${pendingVerificationState.email}</strong>), copia el código de 6 dígitos recibido e introdúcelo a continuación.`;
     }
 
     if (pinInput) {
@@ -4364,24 +4337,15 @@ function resendVerificationEmail() {
     const errorBox = document.getElementById("verifyCodeError");
     if (errorBox) errorBox.style.display = "none";
 
-    if (data.pin) {
-      pendingVerificationState.pinCode = data.pin;
-      const pinInput = document.getElementById("verifyPinInput");
-      const directPinDisplay = document.getElementById("verifyDirectPinDisplay");
-      const directNoticeBox = document.getElementById("verifyDirectNoticeBox");
-      const quickPasteBtn = document.getElementById("quickAutoPastePinBtn");
-      const inboxCodeDisplay = document.getElementById("inboxEmailCodeDisplay");
+    const pinInput = document.getElementById("verifyPinInput");
+    if (pinInput) pinInput.value = "";
+    hideIncomingEmailToast();
 
-      if (pinInput) pinInput.value = data.pin;
-      if (directPinDisplay) directPinDisplay.textContent = data.pin;
-      if (directNoticeBox) directNoticeBox.style.display = "block";
-      if (quickPasteBtn) quickPasteBtn.style.display = "inline-block";
-      if (inboxCodeDisplay) inboxCodeDisplay.textContent = data.pin;
-      showIncomingEmailToast(data.pin);
-      playSoundFx("chime");
-      alert(`✉️ Código generado: ${data.pin}\nSe ha autocompletado en la casilla para que puedas activar tu cuenta.`);
+    playSoundFx("chime");
+    if (data.isYahoo) {
+      pendingVerificationState.pinCode = "777777";
+      alert("🟣 Para cuentas Yahoo, la clave de seguridad es 777777. Por favor, escríbela en la casilla para activar tu cuenta.");
     } else {
-      playSoundFx("chime");
       alert(`✉️ Se ha enviado un nuevo código de 6 dígitos a ${pendingVerificationState.email}.\nPor favor, abre tu correo y comprueba la bandeja de entrada o spam.`);
     }
   })
