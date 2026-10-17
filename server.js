@@ -295,8 +295,93 @@ const pendingVerifications = new Map(); // cleanEmail -> { pin, name, handle, bi
 async function sendEmailVerification(toEmail, toName, pinCode) {
   const resendApiKey = process.env.RESEND_API_KEY || "";
   const brevoApiKey = process.env.BREVO_API_KEY || "";
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || "";
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || "";
+  const smtpHost = process.env.SMTP_HOST || (smtpUser.includes("gmail") ? "smtp.gmail.com" : "");
+  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
 
-  // 1. Envío profesional vía Resend (resend.com)
+  // 1. Envío directo universal vía SMTP (Gmail / Yahoo / Hostinger / Brevo SMTP) si está configurado
+  if (smtpUser && smtpPass && smtpHost) {
+    try {
+      const nodemailer = require("nodemailer");
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass
+        }
+      });
+      await transporter.sendMail({
+        from: `"TokTok Live" <${smtpUser}>`,
+        to: toEmail,
+        subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #0b0e14; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 520px; margin: 0 auto; border: 1px solid #fe2c55;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #fe2c55; margin: 0; font-size: 28px; letter-spacing: 1px;">TokTok Live 🌟</h1>
+              <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">Comunidad y Salas de Video en Vivo</p>
+            </div>
+            <p style="font-size: 16px; color: #ffffff;">¡Hola, <strong>${toName}</strong>!</p>
+            <p style="font-size: 14px; color: #cbd5e1; line-height: 1.5;">
+              Para verificar tu dirección de correo y activar tu cuenta en TokTok Live, ingresa el siguiente código de seguridad de 6 dígitos:
+            </p>
+            <div style="background: rgba(254, 44, 85, 0.12); border: 2px dashed #fe2c55; border-radius: 10px; padding: 20px; text-align: center; margin: 25px 0;">
+              <span style="font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #ffffff; font-family: monospace;">${pinCode}</span>
+            </div>
+            <p style="font-size: 13px; color: #94a3b8; text-align: center;">
+              ⏱️ Este código es de un solo uso y caduca en 15 minutos.
+            </p>
+          </div>
+        `
+      });
+      console.log(`✉️ Correo de verificación entregado a ${toEmail} vía SMTP (${smtpHost})`);
+      return { ok: true, provider: "smtp", delivered: true };
+    } catch (smtpErr) {
+      console.warn("Aviso SMTP:", smtpErr.message);
+    }
+  }
+
+  // 2. Envío profesional vía Brevo (brevo.com - permite enviar a Yahoo, Gmail, Hotmail etc. gratis)
+  if (brevoApiKey) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": brevoApiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          sender: { name: "TokTok Live", email: process.env.BREVO_SENDER_EMAIL || "soporte@tokroom.live" },
+          to: [{ email: toEmail, name: toName }],
+          subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0b0e14; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 520px; margin: 0 auto; border: 1px solid #fe2c55;">
+              <h1 style="color: #fe2c55; text-align: center;">TokTok Live 🌟</h1>
+              <p style="font-size: 16px;">¡Hola, <strong>${toName}</strong>!</p>
+              <p style="font-size: 14px; color: #cbd5e1;">Tu código de verificación de 6 dígitos es:</p>
+              <div style="background: rgba(254, 44, 85, 0.12); border: 2px dashed #fe2c55; border-radius: 10px; padding: 18px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ffffff;">${pinCode}</span>
+              </div>
+              <p style="font-size: 12px; color: #94a3b8; text-align: center;">Caduca en 15 minutos.</p>
+            </div>
+          `
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        console.log(`✉️ Correo de verificación enviado exitosamente a ${toEmail} vía Brevo`);
+        return { ok: true, provider: "brevo", delivered: true };
+      } else {
+        console.error("Error respuesta Brevo:", data);
+      }
+    } catch (err) {
+      console.error("Fallo de conexión con Brevo:", err);
+    }
+  }
+
+  // 3. Envío vía Resend (resend.com)
   if (resendApiKey) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
@@ -306,7 +391,7 @@ async function sendEmailVerification(toEmail, toName, pinCode) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          from: "TokTok Live <onboarding@resend.dev>",
+          from: process.env.RESEND_FROM || "TokTok Live <onboarding@resend.dev>",
           to: [toEmail],
           subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
           html: `
@@ -337,12 +422,12 @@ async function sendEmailVerification(toEmail, toName, pinCode) {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         console.log(`✉️ Correo de verificación entregado a ${toEmail} vía Resend (ID: ${data.id})`);
-        return { ok: true, provider: "resend", id: data.id };
+        return { ok: true, provider: "resend", id: data.id, delivered: true };
       } else {
-        console.warn("Aviso Resend API:", data);
-        // Si Resend está en modo sandbox (solo permite enviar al correo del titular davidyrosa1979@gmail.com),
-        // registramos el código en servidor y permitimos continuar
-        return { ok: true, provider: "resend", sandbox: true, pin: pinCode };
+        console.warn(`⚠️ [Aviso Resend API] No se pudo entregar directamente a ${toEmail}:`, data.message || data);
+        // Si Resend está en modo sandbox (solo permite enviar al correo del titular davidyrosa1979@gmail.com hasta verificar dominio),
+        // activamos el código de respaldo en la app para que el usuario no quede bloqueado
+        return { ok: true, provider: "resend", sandbox: true, pin: pinCode, errorMsg: data.message };
       }
     } catch (err) {
       console.error("Fallo de conexión con Resend:", err);
@@ -350,48 +435,8 @@ async function sendEmailVerification(toEmail, toName, pinCode) {
     }
   }
 
-  // 2. Envío profesional vía Brevo (brevo.com)
-  if (brevoApiKey) {
-    try {
-      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: {
-          "api-key": brevoApiKey,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          sender: { name: "TokTok Live", email: "soporte@tokroom.live" },
-          to: [{ email: toEmail, name: toName }],
-          subject: `🔐 Tu código de verificación de TokTok Live: ${pinCode}`,
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; background-color: #0b0e14; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 520px; margin: 0 auto; border: 1px solid #fe2c55;">
-              <h1 style="color: #fe2c55; text-align: center;">TokTok Live 🌟</h1>
-              <p style="font-size: 16px;">¡Hola, <strong>${toName}</strong>!</p>
-              <p style="font-size: 14px; color: #cbd5e1;">Tu código de verificación de 6 dígitos es:</p>
-              <div style="background: rgba(254, 44, 85, 0.12); border: 2px dashed #fe2c55; border-radius: 10px; padding: 18px; text-align: center; margin: 20px 0;">
-                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ffffff;">${pinCode}</span>
-              </div>
-              <p style="font-size: 12px; color: #94a3b8; text-align: center;">Caduca en 15 minutos.</p>
-            </div>
-          `
-        })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        console.log(`✉️ Correo de verificación enviado exitosamente a ${toEmail} vía Brevo`);
-        return { ok: true, provider: "brevo" };
-      } else {
-        console.error("Error respuesta Brevo:", data);
-        return { ok: false, error: data.message || "Error al enviar correo por Brevo" };
-      }
-    } catch (err) {
-      console.error("Fallo de conexión con Brevo:", err);
-      return { ok: false, error: err.message };
-    }
-  }
-
-  // Fallback en consola si aún no se ha colocado la clave API en Render
-  console.log(`⚠️ [AVISO CONFIGURACIÓN] RESEND_API_KEY no detectada. Código enviado a ${toEmail}: ${pinCode}`);
+  // 4. Fallback si no hay proveedor configurado
+  console.log(`⚠️ [AVISO CONFIGURACIÓN] Código generado para ${toEmail}: ${pinCode}`);
   return { ok: true, simulated: true, pin: pinCode };
 }
 
@@ -563,8 +608,14 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({
       ok: true,
       email: cleanEmail,
-      message: `Hemos enviado tu código de seguridad a ${cleanEmail}`,
-      simulated: !!emailRes.simulated
+      provider: emailRes.provider,
+      delivered: !!emailRes.delivered,
+      simulated: !!emailRes.simulated || !!emailRes.sandbox || !!emailRes.fallback,
+      sandbox: !!emailRes.sandbox,
+      pin: (emailRes.sandbox || emailRes.simulated || emailRes.fallback) ? pin : undefined,
+      message: emailRes.delivered 
+        ? `Hemos enviado tu código de seguridad a ${cleanEmail}` 
+        : `Código de seguridad generado para ${cleanEmail}`
     }));
   }
 
