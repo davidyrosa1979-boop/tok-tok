@@ -494,15 +494,15 @@ body.toktok-theme {
 .video-grid {
   display: grid;
   width: 100%;
-  height: 100%;
   gap: 10px;
   transition: var(--transition-smooth);
 }
 
-/* Modo Cuadrícula de 16 (4 columnas x 4 filas) */
+/* Modo Cuadrícula de 16 (4 columnas x 4 filas en Desktop) */
 .video-grid.grid-16 {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  height: 100%;
 }
 
 /* Modo Destacado */
@@ -521,17 +521,19 @@ body.toktok-theme {
   background: var(--bg-surface);
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.06);
   box-shadow: var(--shadow-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition-smooth);
   aspect-ratio: 16 / 10;
+  width: 100%;
+  height: 100%;
 }
 
 .guest-slot:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 /* Indicador de Hablante Activo (Borde Neón Pulsante Tok Tok) */
@@ -619,12 +621,14 @@ body.toktok-theme {
   color: #fff;
 }
 
-/* Elementos de Video / Canvas */
+/* Elementos de Video / Canvas / Imágenes de Transmisión en los Asientos */
 .video-media-element {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
   display: block;
+  border-radius: inherit;
+  transition: transform 0.3s ease;
 }
 
 /* Filtros aplicables a la cámara */
@@ -642,17 +646,34 @@ body.toktok-theme {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #181b29 0%, #10121d 100%);
-  gap: 8px;
+  background: radial-gradient(circle at center, #1b1f33 0%, #0d0f18 100%);
+  gap: clamp(4px, 1.2vw, 8px);
+  padding: 6px;
+  text-align: center;
+  z-index: 1;
+}
+
+.video-off-placeholder span {
+  font-size: clamp(8.5px, 2.2vw, 11px) !important;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .avatar-disc {
-  width: 52px;
-  height: 52px;
+  width: clamp(38px, 9vw, 54px);
+  height: clamp(38px, 9vw, 54px);
   border-radius: 50%;
   background: var(--tok-gradient-vibrant);
   padding: 2.5px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .avatar-inner-img {
@@ -664,78 +685,104 @@ body.toktok-theme {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: clamp(13px, 3.2vw, 17px);
   color: #fff;
 }
 
 /* Barra inferior del participante en su slot */
 .slot-badge-bar {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 4px;
   pointer-events: none;
   z-index: 10;
 }
 
 .slot-name-tag {
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(8px);
-  padding: 3px 8px;
+  -webkit-backdrop-filter: blur(8px);
+  padding: 3px 7px;
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: clamp(9px, 2.3vw, 11px);
   font-weight: 600;
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 5px;
-  max-width: 130px;
+  gap: 4px;
+  min-width: 0;
+  max-width: calc(100% - 32px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.slot-name-tag span,
+.slot-name-tag strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .host-badge-chip {
   background: var(--tok-pink);
   color: #fff;
-  font-size: 9px;
+  font-size: clamp(7.5px, 2vw, 9px);
   font-weight: 800;
   padding: 1px 4px;
   border-radius: 4px;
   text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.creator-badge-chip {
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #000;
+  font-size: clamp(7.5px, 2vw, 9px);
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .slot-status-icons {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .mic-badge {
-  width: 22px;
-  height: 22px;
+  width: clamp(20px, 5vw, 24px);
+  height: clamp(20px, 5vw, 24px);
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: clamp(10px, 2.5vw, 12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .mic-badge.muted {
-  background: rgba(254, 44, 85, 0.8);
+  background: rgba(254, 44, 85, 0.85);
   color: #fff;
 }
 
 .mic-badge.speaking-wave {
-  background: rgba(37, 244, 238, 0.9);
+  background: rgba(37, 244, 238, 0.95);
   color: #000;
   animation: wavePulsate 0.8s infinite alternate;
 }
@@ -749,67 +796,108 @@ body.toktok-theme {
    ASIENTO VACÍO PARA INVITAR USUARIOS REGISTRADOS
    =================================================================== */
 .empty-seat-slot {
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3px, 1vw, 6px);
   color: var(--text-muted);
-  transition: var(--transition-smooth);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  width: 100%;
+  aspect-ratio: 16 / 10;
 }
 
-.empty-seat-slot:hover {
-  background: rgba(37, 244, 238, 0.06);
+.empty-seat-slot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(37, 244, 238, 0.06) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.empty-seat-slot:hover,
+.empty-seat-slot:active {
+  background: rgba(37, 244, 238, 0.07);
   border-color: var(--tok-cyan);
   color: var(--tok-cyan);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 244, 238, 0.16);
+}
+
+.empty-seat-slot:hover::before,
+.empty-seat-slot:active::before {
+  opacity: 1;
 }
 
 .seat-empty-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: clamp(2px, 1vw, 4px);
   pointer-events: none;
+  padding: 4px;
+  text-align: center;
+  max-width: 92%;
 }
 
 .seat-plus-circle {
-  width: 32px;
-  height: 32px;
+  width: clamp(26px, 6.5vw, 34px);
+  height: clamp(26px, 6.5vw, 34px);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-glass);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: clamp(12px, 3vw, 15px);
   color: #fff;
-  transition: transform 0.2s, background 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.empty-seat-slot:hover .seat-plus-circle {
-  transform: scale(1.15);
+.empty-seat-slot:hover .seat-plus-circle,
+.empty-seat-slot:active .seat-plus-circle {
+  transform: scale(1.15) rotate(90deg);
   background: var(--tok-cyan);
+  border-color: var(--tok-cyan);
   color: #000;
+  box-shadow: 0 0 16px rgba(37, 244, 238, 0.6);
 }
 
 .seat-empty-title {
-  font-size: 11px;
+  font-size: clamp(9px, 2.3vw, 11px);
   font-weight: 700;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .seat-number-label {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 10px;
+  top: 6px;
+  left: 6px;
+  font-size: clamp(8px, 2vw, 9.5px);
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.55);
-  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 2px 5px;
   border-radius: 4px;
   color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  z-index: 3;
 }
 
 /* ===================================================================
@@ -2001,7 +2089,10 @@ body.toktok-theme {
     width: 290px;
   }
   .video-grid.grid-16 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(0, 1fr) !important;
+    height: auto !important;
+    gap: 8px !important;
   }
 }
 
@@ -2187,41 +2278,89 @@ body.toktok-theme {
     display: flex !important;
   }
 
-  /* Cuadrícula de 16 asientos en móvil: espaciosa, nítida y ordenada */
+  /* Cuadrícula de 16 asientos en móvil: espaciosa, nítida, ordenada y perfectamente responsive */
   .video-stage-container {
-    padding: 8px;
+    padding: 8px 6px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 
   .video-grid.grid-16 {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-template-rows: auto !important;
-    grid-auto-rows: minmax(130px, auto) !important;
+    grid-auto-rows: auto !important;
     height: auto !important;
-    min-height: 100% !important;
+    min-height: auto !important;
     gap: 8px !important;
-    padding: 0 0 24px 0 !important;
+    padding: 0 0 32px 0 !important;
   }
 
   .guest-slot, .empty-seat-slot {
-    min-height: 130px !important;
+    width: 100% !important;
+    min-height: unset !important;
     height: auto !important;
-    aspect-ratio: 16 / 10 !important;
+    aspect-ratio: 4 / 3 !important;
     border-radius: var(--radius-md) !important;
   }
 
   .slot-name-badge {
-    font-size: 10.5px;
-    padding: 2px 6px;
+    font-size: 10px;
+    padding: 2px 5px;
   }
 
   .avatar-disc {
-    width: 44px;
-    height: 44px;
+    width: clamp(36px, 9vw, 48px) !important;
+    height: clamp(36px, 9vw, 48px) !important;
   }
 
   .avatar-inner-img {
-    font-size: 15px;
+    font-size: clamp(13px, 3.2vw, 16px) !important;
+  }
+
+  @media (max-width: 380px) {
+    .video-stage-container {
+      padding: 6px 4px !important;
+    }
+    .video-grid.grid-16 {
+      gap: 6px !important;
+    }
+    .guest-slot, .empty-seat-slot {
+      aspect-ratio: 1.25 / 1 !important;
+      border-radius: 8px !important;
+    }
+    .slot-name-tag {
+      font-size: 8.5px !important;
+      padding: 2px 4px !important;
+      gap: 2px !important;
+    }
+    .mic-badge {
+      width: 18px !important;
+      height: 18px !important;
+      font-size: 9px !important;
+    }
+    .seat-plus-circle {
+      width: 24px !important;
+      height: 24px !important;
+      font-size: 11px !important;
+    }
+  }
+
+  @media (max-width: 920px) and (orientation: landscape) and (max-height: 550px) {
+    .video-grid.grid-16 {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 6px !important;
+    }
+    .guest-slot, .empty-seat-slot {
+      aspect-ratio: 16 / 10 !important;
+    }
+    .avatar-disc {
+      width: 32px !important;
+      height: 32px !important;
+    }
+    .avatar-inner-img {
+      font-size: 11px !important;
+    }
   }
 
   /* Barra de control inferior en móvil: organizada y scroll suave */
