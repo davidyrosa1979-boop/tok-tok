@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=37">
+  <link rel="stylesheet" href="styles.css?v=38">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -588,13 +588,23 @@
         </div>
 
         <!-- Enlaces rápidos directos a proveedores de correo -->
-        <div class="email-provider-shortcuts" style="display: flex; gap: 8px; margin: 12px 0 16px 0;">
-          <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            📧 Abrir Gmail
+        <div class="email-provider-shortcuts" style="display: flex; gap: 8px; margin: 12px 0 16px 0; flex-wrap: wrap;">
+          <a href="https://mail.yahoo.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; min-width: 100px; background: rgba(123, 31, 162, 0.2); border: 1px solid rgba(171, 71, 188, 0.5); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            🟣 Yahoo Mail
           </a>
-          <a href="https://outlook.live.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            📬 Abrir Outlook
+          <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; min-width: 100px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            📧 Gmail
           </a>
+          <a href="https://outlook.live.com" target="_blank" rel="noopener noreferrer" class="btn-email-service-link" style="flex: 1; min-width: 100px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            📬 Outlook
+          </a>
+        </div>
+
+        <!-- Caja de Asistencia Inmediata si el proveedor de correo está en modo prueba -->
+        <div id="verifyDirectNoticeBox" style="display: none; background: rgba(0, 230, 118, 0.12); border: 1px solid #00e676; border-radius: 10px; padding: 12px 14px; margin: 12px 0 16px 0; text-align: center;">
+          <strong style="color: #00e676; font-size: 13px; display: block; margin-bottom: 4px;">⚡ Código de Activación de Seguridad:</strong>
+          <span id="verifyDirectPinDisplay" style="font-size: 28px; font-weight: 900; letter-spacing: 6px; color: #fff; font-family: monospace;">------</span>
+          <span style="display: block; font-size: 11.5px; color: #cbd5e1; margin-top: 4px;">Hemos autocompletado tu código en la casilla. Pulsa el botón verde para entrar de inmediato a la sala.</span>
         </div>
 
         <form id="emailVerificationForm" class="verification-form" novalidate>
@@ -615,6 +625,9 @@
               pattern="[0-9]*"
               required 
             />
+            <button type="button" class="btn-text-link" id="quickAutoPastePinBtn" style="display: none; margin: 8px auto 0 auto; color: #00e676; font-weight: 700; font-size: 12px; cursor: pointer;">
+              📋 Pegar Código Automáticamente
+            </button>
             <span class="input-hint" style="text-align: center;">Escribe los 6 números que te han llegado a tu correo.</span>
           </div>
 
@@ -1521,6 +1534,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=37"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

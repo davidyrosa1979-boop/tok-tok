@@ -4031,6 +4031,7 @@ function handleMandatoryRegistration(e) {
       email: payload.email,
       bio: payload.bio,
       avatarBg: payload.avatarBg,
+      pinCode: data.pin || "",
       timestamp: Date.now()
     };
 
@@ -4041,8 +4042,32 @@ function handleMandatoryRegistration(e) {
     if (emailGreetingName) emailGreetingName.textContent = `¡Hola, ${name}!`;
 
     const pinInput = document.getElementById("verifyPinInput");
+    const directNoticeBox = document.getElementById("verifyDirectNoticeBox");
+    const directPinDisplay = document.getElementById("verifyDirectPinDisplay");
+    const quickPasteBtn = document.getElementById("quickAutoPastePinBtn");
+    const inboxCodeDisplay = document.getElementById("inboxEmailCodeDisplay");
+
+    const verifySentLabel = document.querySelector(".verify-sent-label");
+    const verifySubHint = document.querySelector(".verify-sub-hint");
+
+    if (data.pin) {
+      if (pinInput) pinInput.value = data.pin;
+      if (directPinDisplay) directPinDisplay.textContent = data.pin;
+      if (directNoticeBox) directNoticeBox.style.display = "block";
+      if (quickPasteBtn) quickPasteBtn.style.display = "inline-block";
+      if (inboxCodeDisplay) inboxCodeDisplay.textContent = data.pin;
+      if (verifySentLabel) verifySentLabel.textContent = "⚡ Código de activación para tu cuenta:";
+      if (verifySubHint) verifySubHint.innerHTML = "🔔 <strong>Activación Rápida:</strong> Para que no tengas que esperar a tu bandeja de entrada externa, tu código de seguridad se ha cargado automáticamente aquí abajo. Solo pulsa el botón verde <strong>'Verificar y Entrar'</strong>.";
+      showIncomingEmailToast(data.pin);
+    } else {
+      if (pinInput) pinInput.value = "";
+      if (directNoticeBox) directNoticeBox.style.display = "none";
+      if (quickPasteBtn) quickPasteBtn.style.display = "none";
+      if (verifySentLabel) verifySentLabel.textContent = "Hemos enviado un código de seguridad a:";
+      if (verifySubHint) verifySubHint.textContent = "Abre tu correo electrónico en tu móvil o navegador, copia el código de 6 números recibido e introdúcelo a continuación.";
+    }
+
     if (pinInput) {
-      pinInput.value = "";
       setTimeout(() => pinInput.focus(), 300);
     }
 
@@ -4063,7 +4088,14 @@ function handleMandatoryRegistration(e) {
 }
 
 function showIncomingEmailToast(pin) {
-  // El código se envía de forma confidencial al correo del usuario y ya no se muestra en pantalla
+  if (!pin) return;
+  const toast = document.getElementById("incomingEmailToast");
+  const subj = document.getElementById("incomingToastSubject");
+  if (subj) subj.textContent = `Tu código de activación es: ${pin}`;
+  if (toast) {
+    toast.style.display = "flex";
+    playSoundFx("pop");
+  }
 }
 
 function handleVerificationCodeSubmit(e) {
@@ -4278,8 +4310,26 @@ function resendVerificationEmail() {
     const errorBox = document.getElementById("verifyCodeError");
     if (errorBox) errorBox.style.display = "none";
 
-    playSoundFx("chime");
-    alert(`✉️ Se ha enviado un nuevo código de 6 dígitos a ${pendingVerificationState.email}.\nPor favor, abre tu correo y comprueba la bandeja de entrada o spam.`);
+    if (data.pin) {
+      pendingVerificationState.pinCode = data.pin;
+      const pinInput = document.getElementById("verifyPinInput");
+      const directPinDisplay = document.getElementById("verifyDirectPinDisplay");
+      const directNoticeBox = document.getElementById("verifyDirectNoticeBox");
+      const quickPasteBtn = document.getElementById("quickAutoPastePinBtn");
+      const inboxCodeDisplay = document.getElementById("inboxEmailCodeDisplay");
+
+      if (pinInput) pinInput.value = data.pin;
+      if (directPinDisplay) directPinDisplay.textContent = data.pin;
+      if (directNoticeBox) directNoticeBox.style.display = "block";
+      if (quickPasteBtn) quickPasteBtn.style.display = "inline-block";
+      if (inboxCodeDisplay) inboxCodeDisplay.textContent = data.pin;
+      showIncomingEmailToast(data.pin);
+      playSoundFx("chime");
+      alert(`✉️ Código generado: ${data.pin}\nSe ha autocompletado en la casilla para que puedas activar tu cuenta.`);
+    } else {
+      playSoundFx("chime");
+      alert(`✉️ Se ha enviado un nuevo código de 6 dígitos a ${pendingVerificationState.email}.\nPor favor, abre tu correo y comprueba la bandeja de entrada o spam.`);
+    }
   })
   .catch(() => {
     if (resendBtn) {
