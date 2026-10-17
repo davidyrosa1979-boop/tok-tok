@@ -5693,6 +5693,7 @@ function renderRoomsList(rooms) {
 
 function switchRoom(targetRoomId) {
   if (!targetRoomId || targetRoomId === TokTokState.roomId) return;
+  sessionStorage.removeItem("toktok_exit_to_lobby");
   window.location.href = `${window.location.pathname}?room=${encodeURIComponent(targetRoomId)}`;
 }
 
@@ -5710,6 +5711,7 @@ function createNewIndependentRoom(roomName) {
   .then(res => res.json())
   .then(data => {
     if (data && data.ok && data.roomId) {
+      sessionStorage.removeItem("toktok_exit_to_lobby");
       // Guardar que este usuario creó esta sala para concederle rango de anfitrión permanente
       try {
         const myRooms = JSON.parse(localStorage.getItem("toktok_my_created_rooms") || "[]");

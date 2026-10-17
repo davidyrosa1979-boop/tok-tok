@@ -1431,12 +1431,12 @@ body.toktok-theme {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(12px);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 10005;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -2742,7 +2742,7 @@ body.toktok-theme {
    MODAL DE REGISTRO OBLIGATORIO AL ENTRAR / DESCARGAR
    =================================================================== */
 .modal-backdrop.modal-mandatory {
-  z-index: 9999;
+  z-index: 10020;
   background: rgba(5, 5, 10, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
