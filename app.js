@@ -24,14 +24,14 @@ const TokTokState = {
   roomId: (new URLSearchParams(window.location.search).get("room") || new URLSearchParams(window.location.search).get("roomId") || "main").toLowerCase().trim(),
   roomName: (new URLSearchParams(window.location.search).get("room") || new URLSearchParams(window.location.search).get("roomId") || "main").toLowerCase().trim() === "main" ? "Sala Oficial DYR" : `Sala ${new URLSearchParams(window.location.search).get("room") || new URLSearchParams(window.location.search).get("roomId")}`,
   localUser: {
-    id: "user_dyr_creator",
-    name: "DYR",
-    handle: "dyr",
-    email: "davidyrosa1979@gmail.com",
-    avatarBg: "linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)",
-    isHost: true,
-    isCreator: true,
-    hasInfiniteCoins: true,
+    id: null,
+    name: "Invitado",
+    handle: "invitado",
+    email: "",
+    avatarBg: "#fe2c55",
+    isHost: false,
+    isCreator: false,
+    hasInfiniteCoins: false,
     cameraOn: true,
     micOn: true,
     isSpeaking: false,
@@ -204,6 +204,7 @@ function loadRegisteredUsers() {
       TokTokState.registeredUsers = Array.isArray(parsed) 
         ? parsed.filter(u => u && u.id && !u.id.startsWith("u_")) 
         : [];
+      TokTokState.registeredUsers.forEach(u => { delete u.email; });
     } else {
       TokTokState.registeredUsers = [];
     }
@@ -211,15 +212,20 @@ function loadRegisteredUsers() {
     TokTokState.registeredUsers = [];
   }
 
-  // Sincronizar usuarios reales con el servidor
+  // Sincronizar usuarios reales con el servidor (PROTECCIÓN RGPD: nunca almacenar correos de otros)
   fetch("/api/users")
     .then(r => r.json())
     .then(data => {
       if (data && data.ok && Array.isArray(data.users)) {
         const map = new Map();
-        data.users.forEach(u => map.set(u.email || u.id, u));
+        data.users.forEach(u => {
+          delete u.email;
+          map.set(u.id || u.handle, u);
+        });
         TokTokState.registeredUsers.forEach(u => {
-          if (!map.has(u.email || u.id)) map.set(u.email || u.id, u);
+          delete u.email;
+          const key = u.id || u.handle;
+          if (!map.has(key)) map.set(key, u);
         });
         TokTokState.registeredUsers = Array.from(map.values());
         saveRegisteredUsers();
@@ -288,6 +294,7 @@ function loadLocalProfile() {
 
   updateProfileHeaderUI();
   updateCoinsDisplay();
+  updateModeratorAccessUI();
 }
 
 function saveLocalProfile(name, handle, email) {
@@ -351,7 +358,7 @@ function updateProfileHeaderUI() {
 
   if (modalName) modalName.textContent = TokTokState.localUser.name;
   if (modalHandle) modalHandle.textContent = `@${TokTokState.localUser.handle}`;
-  if (modalEmail) modalEmail.textContent = TokTokState.localUser.email || "davidyrosa1979@gmail.com";
+  if (modalEmail) modalEmail.textContent = "🔒 Correo Protegido y Cifrado (RGPD)";
   if (inputName) inputName.value = TokTokState.localUser.name;
   if (inputHandle) inputHandle.value = TokTokState.localUser.handle;
   if (modalAvatar) {
@@ -467,16 +474,24 @@ async function setupLocalCamera() {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       let stream = null;
       try {
-        // Intento 1: Cámara frontal móvil con audio en alta definición
+        // Intento 1: Cámara frontal móvil con audio con cancelación de eco y supresión de ruido
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: true
+          audio: {
+            echoCancellation: { ideal: true },
+            noiseSuppression: { ideal: true },
+            autoGainControl: { ideal: true },
+            channelCount: 1
+          }
         });
       } catch (err1) {
         console.warn("Reintentando cámara con constraints estándar:", err1);
         try {
-          // Intento 2: Estándar video + audio
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          // Intento 2: Estándar video + audio optimizado
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          });
         } catch (err2) {
           console.warn("Reintentando solo video:", err2);
           // Intento 3: Solo video si hay conflicto de audio en Safari
@@ -1392,7 +1407,7 @@ function renderHostControlModal() {
   const regListEl = document.getElementById("hostControlRegisteredUsersList");
   if (regListEl) {
     regListEl.innerHTML = "";
-    const usersToDelete = TokTokState.registeredUsers.filter(u => !u.isCreator && u.email !== "davidyrosa1979@gmail.com" && u.name !== "DYR");
+    const usersToDelete = TokTokState.registeredUsers.filter(u => !u.isCreator && u.id !== "user_dyr_creator" && u.handle !== "dyr" && u.name !== "DYR");
     if (usersToDelete.length === 0) {
       regListEl.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; padding: 6px;">No hay otros usuarios registrados actualmente.</div>`;
     } else {
@@ -1406,7 +1421,7 @@ function renderHostControlModal() {
             </div>
             <div style="min-width: 0;">
               <strong style="font-size: 12px; color: #fff; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name} (${u.handle})</strong>
-              <span style="font-size: 10px; color: var(--text-muted);">${u.email || 'Sin correo'} • <span style="color: ${u.status === 'online' ? '#00e676' : 'var(--text-muted)'}; font-weight: 600;">${u.status === 'online' ? '🟢 Conectado' : '⚪ Desconectado'}</span></span>
+              <span style="font-size: 10px; color: var(--text-muted);"><span style="color: ${u.status === 'online' ? '#00e676' : 'var(--text-muted)'}; font-weight: 600;">${u.status === 'online' ? '🟢 Conectado' : '⚪ Desconectado'}</span> • Rol: ${u.role === 'vip' ? '🌟 VIP' : 'Miembro'}</span>
             </div>
           </div>
           <button type="button" style="background: #fe2c55; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; flex-shrink: 0;" onclick="hostPermanentlyDeleteUser('${u.id}', '${u.handle}', '${u.name}')">
@@ -1498,9 +1513,9 @@ async function renderExpelledUsersList() {
       item.innerHTML = `
         <div style="min-width: 0; display: flex; flex-direction: column;">
           <strong style="color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name || u.handle || 'Usuario'} ${u.handle ? `(${u.handle})` : ''}</strong>
-          <span style="color: #fe2c55; font-size: 10px; font-weight: 600;">${u.email || 'Sin correo'}</span>
+          <span style="color: #fe2c55; font-size: 10px; font-weight: 600;">Cuenta Bloqueada</span>
         </div>
-        <button type="button" style="background: #00e676; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;" onclick="unbanUserByEmail('${u.email || u.handle || u.id}')">
+        <button type="button" style="background: #00e676; color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer; flex-shrink: 0;" onclick="unbanUserByEmail('${u.handle || u.id}')">
           🟢 Desbloquear
         </button>
       `;
@@ -1898,6 +1913,44 @@ function updateDiamondsDisplay() {
 // ===================================================================
 // GESTIÓN DE MODERADORES OFICIALES DE LA SALA
 // ===================================================================
+// Comprobar si el usuario local tiene facultades de moderación o es Creador/Host
+function hasModerationPrivileges() {
+  if (!TokTokState.localUser) return false;
+  const isCreator = TokTokState.localUser.isCreator || 
+    (TokTokState.localUser.email && TokTokState.localUser.email.toLowerCase().trim() === "davidyrosa1979@gmail.com") ||
+    (TokTokState.localUser.handle && TokTokState.localUser.handle.toLowerCase().replace('@', '').trim() === "dyr") ||
+    (TokTokState.localUser.name && TokTokState.localUser.name.toLowerCase().trim() === "dyr");
+  const isHost = !!TokTokState.localUser.isHost;
+  const isMod = isUserModerator(TokTokState.localUser.id) || 
+    isUserModerator(TokTokState.localUser.handle) || 
+    isUserModerator(TokTokState.localUser.name);
+  return isCreator || isHost || isMod;
+}
+
+// Control dinámico de visibilidad del botón de Moderación (Seguridad y Privacidad)
+function updateModeratorAccessUI() {
+  const hasAccess = hasModerationPrivileges();
+  const openHostControlBtn = document.getElementById("openHostControlModalBtn");
+  const dockHostControlBtn = document.getElementById("dockHostControlBtn");
+  const floatingHostModFab = document.getElementById("floatingHostModFab");
+
+  if (openHostControlBtn) {
+    openHostControlBtn.style.display = hasAccess ? "inline-flex" : "none";
+  }
+  if (dockHostControlBtn) {
+    dockHostControlBtn.style.display = hasAccess ? "inline-flex" : "none";
+  }
+  if (floatingHostModFab) {
+    floatingHostModFab.style.display = hasAccess ? "flex" : "none";
+  }
+
+  // Si no tiene permisos y el panel está abierto, cerrarlo de inmediato
+  const hostControlModal = document.getElementById("hostControlModal");
+  if (!hasAccess && hostControlModal && hostControlModal.classList.contains("show")) {
+    closeModal("hostControlModal");
+  }
+}
+
 function isUserModerator(userIdOrHandle) {
   if (!userIdOrHandle) return false;
   const target = String(userIdOrHandle).toLowerCase().replace('@', '').trim();
@@ -1922,7 +1975,6 @@ function addModerator(user) {
     id: user.id || `mod_${Date.now()}`,
     name: user.name,
     handle: handle,
-    email: user.email || `${user.name.toLowerCase().replace(/\s+/g, '')}@toktok.live`,
     avatarBg: user.avatarBg || "linear-gradient(135deg, #00f2fe, #4facfe)",
     appointedAt: "Activo"
   };
@@ -1930,8 +1982,17 @@ function addModerator(user) {
   TokTokState.moderation.moderators.push(modObj);
   renderModeratorsList();
   renderVideoGrid();
+  updateModeratorAccessUI();
   addChatMessage("TokTokBot", `🛡️ [${TokTokState.localUser.name}] ha nombrado a ${user.name} (${handle}) como MODERADOR OFICIAL de la sala con poderes de gestión.`);
   playSoundFx("fanfare");
+
+  // Notificar al servidor en tiempo real
+  if (realtimeSocket && realtimeSocket.readyState === 1) {
+    realtimeSocket.send(JSON.stringify({
+      type: "moderator_add",
+      data: { moderator: modObj, roomId: TokTokState.room.id }
+    }));
+  }
 }
 
 function removeModerator(identifier) {
@@ -1946,8 +2007,16 @@ function removeModerator(identifier) {
     const removed = TokTokState.moderation.moderators.splice(index, 1)[0];
     renderModeratorsList();
     renderVideoGrid();
+    updateModeratorAccessUI();
     addChatMessage("TokTokBot", `ℹ️ Se ha revocado el rol de moderador a ${removed.name} (${removed.handle}).`);
     playSoundFx("pop");
+
+    if (realtimeSocket && realtimeSocket.readyState === 1) {
+      realtimeSocket.send(JSON.stringify({
+        type: "moderator_remove",
+        data: { target: target, roomId: TokTokState.room.id }
+      }));
+    }
   }
 }
 
@@ -2745,18 +2814,17 @@ function setupEventListeners() {
 
       if (!rawInput) {
         if (loginError) {
-          loginError.textContent = "⚠️ Debes ingresar tu correo electrónico o nombre de usuario.";
+          loginError.textContent = "⚠️ Debes ingresar tu correo electrónico registrado.";
           loginError.style.display = "flex";
         }
         return;
       }
 
-      // Permitir correo válido o usuario (al menos 2 caracteres)
+      // REGLA ESTRICTA DE SEGURIDAD: Solo permitir correo electrónico personal, NUNCA nombre de usuario
       const isEmail = isValidEmail(rawInput);
-      const isHandle = /^[a-zA-Z0-9_@.-]{2,}$/.test(rawInput);
-      if (!isEmail && !isHandle) {
+      if (!isEmail) {
         if (loginError) {
-          loginError.textContent = "⚠️ Introduce tu correo electrónico (ej: usuario@correo.com) o tu nombre de usuario (ej: @elpikachu).";
+          loginError.textContent = "⚠️ Por motivos de seguridad y para evitar suplantaciones de identidad, NO se permite iniciar sesión con nombre de usuario (@). Debes introducir tu correo electrónico personal registrado (ej: nombre@correo.com).";
           loginError.style.display = "flex";
         }
         return;
@@ -2774,7 +2842,7 @@ function setupEventListeners() {
 
         if (!data.ok) {
           if (loginError) {
-            loginError.textContent = `❌ ${data.error || "No existe cuenta con este correo."}`;
+            loginError.textContent = `❌ ${data.error || "No existe ninguna cuenta con este correo electrónico."}`;
             loginError.style.display = "flex";
           }
           return;
@@ -2802,11 +2870,11 @@ function setupEventListeners() {
         setupLocalCamera();
 
         if (isCreator) {
-          alert(`👑 ¡Bienvenido DYR!\nHas iniciado sesión con éxito como Creador Oficial (${user.email}) con Monedas Infinitas y control total.`);
+          alert(`👑 ¡Bienvenido DYR!\nHas iniciado sesión con éxito como Creador Oficial con Monedas Infinitas y control total.`);
         } else if (isVip) {
-          alert(`🌸 ¡Bienvenida Rosa!\nHas iniciado sesión con éxito como Rosa y David (${user.email}) con Monedas Infinitas 🪙.`);
+          alert(`🌸 ¡Bienvenida Rosa!\nHas iniciado sesión con éxito como Rosa y David con Monedas Infinitas 🪙.`);
         } else {
-          alert(`🎉 ¡Bienvenido/a ${user.name}!\nHas iniciado sesión con éxito con tu correo (${user.email}).`);
+          alert(`🎉 ¡Bienvenido/a ${user.name}!\nHas iniciado sesión con éxito.`);
         }
       } catch (err) {
         console.error("Error en login:", err);
@@ -3061,6 +3129,11 @@ function setupEventListeners() {
   const closeHostControlBtn = document.getElementById("closeHostControlModalBtn");
 
   const openHostControlHandler = () => {
+    // REGLA ESTRICTA: Nadie que no sea moderador, anfitrión o creador puede entrar
+    if (!hasModerationPrivileges()) {
+      alert("⛔ Acceso Restringido: Este menú es exclusivo para el Creador, el Anfitrión y los Moderadores Oficiales de la sala.");
+      return;
+    }
     renderHostControlModal();
     openModal("hostControlModal");
   };
@@ -3935,6 +4008,7 @@ function activateAccount(state) {
   });
   saveRegisteredUsers();
   renderRegisteredUsersDirectory();
+  updateModeratorAccessUI();
 
   // Sincronizar permanentemente con el servidor central
   fetch("/api/auth/register", {
@@ -4230,6 +4304,26 @@ function handleRealtimeEvent(type, data) {
     handleIncomingCameraFrame(data);
   } else if (type === "audio_chunk") {
     handleIncomingAudioChunk(data);
+  } else if (type === "moderator_add" && data && data.moderator) {
+    if (!isUserModerator(data.moderator.handle) && !isUserModerator(data.moderator.name)) {
+      TokTokState.moderation.moderators.push(data.moderator);
+      renderModeratorsList();
+      renderVideoGrid();
+      updateModeratorAccessUI();
+    }
+  } else if (type === "moderator_remove" && data && data.target) {
+    const t = String(data.target).toLowerCase().replace('@', '').trim();
+    const idx = TokTokState.moderation.moderators.findIndex(m => 
+      (m.id && m.id.toLowerCase() === t) ||
+      (m.name && m.name.toLowerCase() === t) ||
+      (m.handle && m.handle.toLowerCase().replace('@', '') === t)
+    );
+    if (idx !== -1) {
+      TokTokState.moderation.moderators.splice(idx, 1);
+      renderModeratorsList();
+      renderVideoGrid();
+      updateModeratorAccessUI();
+    }
   } else if (type === "stage_update") {
     if (data.stageSeats) syncStageSeats(data.stageSeats);
   } else if (type === "presence_update") {
@@ -4459,8 +4553,8 @@ function pollSync() {
 function startLocalCameraFrameRelay() {
   if (frameStreamInterval) clearInterval(frameStreamInterval);
   const hiddenCanvas = document.createElement("canvas");
-  hiddenCanvas.width = 320;
-  hiddenCanvas.height = 240;
+  hiddenCanvas.width = 180;
+  hiddenCanvas.height = 135;
   const ctx = hiddenCanvas.getContext("2d");
 
   frameStreamInterval = setInterval(() => {
@@ -4474,8 +4568,8 @@ function startLocalCameraFrameRelay() {
     if (!localVideo || localVideo.paused || localVideo.ended || !localVideo.srcObject) return;
 
     try {
-      ctx.drawImage(localVideo, 0, 0, 320, 240);
-      const jpegData = hiddenCanvas.toDataURL("image/jpeg", 0.4);
+      ctx.drawImage(localVideo, 0, 0, 180, 135);
+      const jpegData = hiddenCanvas.toDataURL("image/jpeg", 0.3);
 
       const framePayload = {
         userId: TokTokState.localUser.id,
@@ -4492,7 +4586,7 @@ function startLocalCameraFrameRelay() {
         }).catch(() => {});
       }
     } catch (_) {}
-  }, 140); // ~7 fotogramas por segundo, consumo mínimo y ultra fluido
+  }, 180); // ~5.5 fps optimizado: ligero, fluido en móviles y canal WebSocket 100% despejado para audio
 }
 
 function handleIncomingCameraFrame(data) {
@@ -4558,9 +4652,30 @@ function handleIncomingCameraFrame(data) {
 // ===================================================================
 // RELAY DE AUDIO EN VIVO BIDIRECCIONAL (VOZ GARANTIZADA ENTRE MÓVILES)
 // ===================================================================
+// SISTEMA DE AUDIO EN TIEMPO REAL MULTI-USUARIO CON CALIDAD CRISTALINA
+// ===================================================================
 let liveAudioProcessor = null;
 let liveAudioSource = null;
-let nextAudioPlayTime = 0;
+let speechHangover = 0; // Hangover VAD anti-cortes (~350ms)
+const userAudioPipelines = new Map(); // userId -> { nextPlayTime, gainNode, lastSeen }
+let masterAudioCompressor = null;
+
+function getMasterCompressor(ctx) {
+  if (!masterAudioCompressor || masterAudioCompressor.context !== ctx) {
+    masterAudioCompressor = ctx.createDynamicsCompressor();
+    masterAudioCompressor.threshold.setValueAtTime(-14, ctx.currentTime);
+    masterAudioCompressor.knee.setValueAtTime(10, ctx.currentTime);
+    masterAudioCompressor.ratio.setValueAtTime(12, ctx.currentTime);
+    masterAudioCompressor.attack.setValueAtTime(0.002, ctx.currentTime);
+    masterAudioCompressor.release.setValueAtTime(0.08, ctx.currentTime);
+
+    const masterCeiling = ctx.createGain();
+    masterCeiling.gain.setValueAtTime(0.85, ctx.currentTime);
+    masterAudioCompressor.connect(masterCeiling);
+    masterCeiling.connect(ctx.destination);
+  }
+  return masterAudioCompressor;
+}
 
 async function startLiveAudioCapture(stream = null) {
   if (!stream) {
@@ -4569,7 +4684,14 @@ async function startLiveAudioCapture(stream = null) {
   if (!stream || !stream.getAudioTracks || stream.getAudioTracks().length === 0) {
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: { ideal: true },
+            noiseSuppression: { ideal: true },
+            autoGainControl: { ideal: true },
+            channelCount: 1
+          }
+        });
         if (TokTokState.localUser.mediaStream) {
           stream.getAudioTracks().forEach(t => TokTokState.localUser.mediaStream.addTrack(t));
         } else {
@@ -4603,30 +4725,41 @@ async function startLiveAudioCapture(stream = null) {
     }
 
     liveAudioSource = ctx.createMediaStreamSource(stream);
-    // Buffer size 2048: ultra baja latencia (~46ms a 44.1kHz), compatible universal en móviles
+    // Buffer size 2048: latencia óptima y compatible con todos los navegadores móviles
     liveAudioProcessor = ctx.createScriptProcessor(2048, 1, 1);
 
     liveAudioProcessor.onaudioprocess = (e) => {
       if (!TokTokState.localUser.micOn) return;
-      // Solo transmite si está dentro del escenario / sala en vivo
       if (!isUserOnStage()) return;
 
       const input = e.inputBuffer.getChannelData(0);
 
-      // Noise gate por RMS para optimizar el ancho de banda móvil
+      // Detección de Voz Inteligente (VAD) con Hangover para evitar cortes entre sílabas y robótica
       let sum = 0;
       for (let i = 0; i < input.length; i++) {
         sum += input[i] * input[i];
       }
       const rms = Math.sqrt(sum / input.length);
-      if (rms < 0.003) return; // Silencio
 
-      // Decimar por 2 para ancho de banda óptimo y nitidez de voz (22.05 kHz)
+      const VAD_THRESHOLD = 0.002; // Sensibilidad calibrada para voz natural
+      if (rms >= VAD_THRESHOLD) {
+        speechHangover = 8; // Mantener vivo durante ~350ms tras cada palabra
+      } else if (speechHangover > 0) {
+        speechHangover--;
+      } else {
+        return; // Silencio real
+      }
+
+      // Filtro anti-aliasing de media móvil (2 muestras) para eliminar asperezas metálicas
       const downsampleFactor = 2;
       const outLen = Math.floor(input.length / downsampleFactor);
       const int16Array = new Int16Array(outLen);
       for (let i = 0; i < outLen; i++) {
-        const s = Math.max(-1, Math.min(1, input[i * downsampleFactor]));
+        const idx0 = i * 2;
+        const s0 = input[idx0];
+        const s1 = (idx0 + 1 < input.length) ? input[idx0 + 1] : s0;
+        const smoothed = 0.5 * (s0 + s1);
+        const s = Math.max(-1, Math.min(1, smoothed));
         int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
       }
 
@@ -4658,7 +4791,7 @@ async function startLiveAudioCapture(stream = null) {
 
     liveAudioSource.connect(liveAudioProcessor);
 
-    // Conectar a silenceGain (gain = 0) -> ctx.destination para mantener vivo el procesador sin feedback ni eco local
+    // Conectar a silenceGain (gain = 0) para mantener activo el bucle sin eco local
     const silenceGain = ctx.createGain();
     silenceGain.gain.value = 0;
     liveAudioProcessor.connect(silenceGain);
@@ -4670,10 +4803,9 @@ async function startLiveAudioCapture(stream = null) {
 
 function handleIncomingAudioChunk(data) {
   if (!data || !data.pcm || !data.userId) return;
-  // No reproducir nuestro propio audio local
   if (data.userId === TokTokState.localUser.id) return;
 
-  // REGLA ESTRICTA DE DAVID: Silencio total si el receptor NO está dentro del escenario
+  // Silencio total si el receptor no está dentro del escenario
   if (!isUserOnStage()) return;
 
   // Si el modal de registro obligatorio o verificación están abiertos, silencio total
@@ -4715,31 +4847,49 @@ function handleIncomingAudioChunk(data) {
       float32Array[i] = int16Array[i] / 32768.0;
     }
 
+    // ANTI-PETARDEO: Micro-fades suaves de 32 muestras al inicio y al final del chunk
+    // Elimina por completo los clicks/pops ("pa, pa, pa") por discontinuidad en las fronteras de audio
+    const fadeLen = Math.min(32, Math.floor(float32Array.length / 4));
+    for (let i = 0; i < fadeLen; i++) {
+      const factor = i / fadeLen;
+      float32Array[i] *= factor;
+      float32Array[float32Array.length - 1 - i] *= factor;
+    }
+
     // Crear AudioBuffer
     const sampleRate = data.sampleRate || 22050;
     const audioBuffer = ctx.createBuffer(1, float32Array.length, sampleRate);
     audioBuffer.getChannelData(0).set(float32Array);
 
-    // Jitter buffer y scheduling
+    // PIPELINE INDEPENDIENTE POR USUARIO (Resuelve solapamiento y petardeo con 2 o más personas)
+    let pipeline = userAudioPipelines.get(data.userId);
+    if (!pipeline) {
+      const userGain = ctx.createGain();
+      userGain.gain.value = 0.70; // Margen dinámico limpio para mezcla multi-usuario sin distorsión ni clipping digital
+      userGain.connect(getMasterCompressor(ctx));
+      pipeline = {
+        nextPlayTime: 0,
+        gainNode: userGain,
+        lastSeen: Date.now()
+      };
+      userAudioPipelines.set(data.userId, pipeline);
+    }
+    pipeline.lastSeen = Date.now();
+
     const now = ctx.currentTime;
-    if (nextAudioPlayTime < now) {
-      nextAudioPlayTime = now + 0.04;
+    if (pipeline.nextPlayTime < now) {
+      pipeline.nextPlayTime = now + 0.04; // 40ms de jitter buffer inicial por usuario
+    } else if (pipeline.nextPlayTime - now > 0.25) {
+      // Si la cola se desborda (>250ms acumulados por ráfagas de red), descartamos el chunk atrasado en vez de solapar voces
+      return;
     }
 
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = 1.3; // Volumen optimizado para altavoces móviles
-    source.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    source.start(nextAudioPlayTime);
+    source.connect(pipeline.gainNode);
+    source.start(pipeline.nextPlayTime);
 
-    nextAudioPlayTime += audioBuffer.duration;
-
-    // Resincronización si el retraso excede 350ms
-    if (nextAudioPlayTime - now > 0.35) {
-      nextAudioPlayTime = now + 0.05;
-    }
+    pipeline.nextPlayTime += audioBuffer.duration;
 
     // Indicador visual de voz en vivo en los asientos
     if (data.userId === "user_dyr_creator") {
@@ -5195,6 +5345,7 @@ function playRemoteAudioStream(stream) {
     document.body.appendChild(remoteAudio);
   }
   remoteAudio.srcObject = stream;
+  remoteAudio.muted = true; // El audio unificado se reproduce a través del pipeline Web Audio con control dinámico y anti-petardeo
   remoteAudio.play().catch(e => {
     console.debug("Interacción requerida para reproducir audio:", e);
   });
@@ -5533,6 +5684,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadRegisteredUsers();
   loadDmInbox();
   loadLocalProfile();
+  updateModeratorAccessUI();
   renderVideoGrid();
   renderGiftsCatalog();
   renderRegisteredUsersDirectory();

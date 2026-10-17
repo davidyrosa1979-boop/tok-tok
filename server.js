@@ -294,31 +294,43 @@ const server = http.createServer(async (req, res) => {
   // 1. ENDPOINTS DE LA API EN TIEMPO REAL
   // -----------------------------------------------------------------
 
-  // Listar usuarios registrados en la comunidad
+  // Listar usuarios registrados en la comunidad (PROTECCIÓN DE DATOS: nunca exponer correos)
   if (pathname === "/api/users" && req.method === "GET") {
     const users = loadUsersDb();
+    const sanitized = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      handle: u.handle,
+      role: u.role,
+      isCreator: !!u.isCreator,
+      isHost: !!u.isHost,
+      avatarBg: u.avatarBg,
+      bio: u.bio,
+      coins: u.coins,
+      registeredAt: u.registeredAt
+    }));
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ ok: true, users }));
+    return res.end(JSON.stringify({ ok: true, users: sanitized }));
   }
 
-  // Iniciar sesión con Correo Electrónico o Nombre de Usuario
+  // Iniciar sesión EXCLUSIVAMENTE con Correo Electrónico (Protección RGPD y Anti-Suplantación)
   if (pathname === "/api/auth/login" && req.method === "POST") {
     const { email } = await parseJsonBody(req);
     const cleanEmail = (email || "").toLowerCase().trim();
-    const cleanHandle = cleanEmail.replace(/^@/, "").trim();
-    if (!cleanEmail) {
+
+    if (!cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "Debes introducir tu correo electrónico o usuario para iniciar sesión." }));
+      return res.end(JSON.stringify({ 
+        ok: false, 
+        error: "Por motivos de seguridad y privacidad, solo está permitido iniciar sesión con tu correo electrónico personal verificado (ej: nombre@correo.com). No se permite acceder con nombre de usuario (@) para evitar suplantaciones de identidad." 
+      }));
     }
 
     const users = loadUsersDb();
-    let found = users.find(u => 
-      (u.email && u.email.toLowerCase().trim() === cleanEmail) ||
-      (u.handle && u.handle.toLowerCase().trim() === cleanHandle)
-    );
+    let found = users.find(u => u.email && u.email.toLowerCase().trim() === cleanEmail);
 
-    // Caso David / DYR Creador Oficial (por correo oficial o usuario)
-    if (cleanEmail === "davidyrosa1979@gmail.com" || cleanHandle === "dyr") {
+    // Caso David / DYR Creador Oficial (EXCLUSIVAMENTE por su correo oficial)
+    if (cleanEmail === "davidyrosa1979@gmail.com") {
       if (!found) {
         found = {
           id: "user_dyr_creator",
@@ -341,13 +353,13 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: true, user: found, isCreator: true }));
     }
 
-    // Caso Rosa y David VIP Oficial (por correo rosaydavid1979@gmail.com, rosa@tokroom.live o usuario rosaydavid)
-    if (cleanEmail === "rosaydavid1979@gmail.com" || cleanEmail === "rosa@tokroom.live" || cleanEmail.includes("rosaydavid") || cleanHandle === "rosaydavid") {
+    // Caso Rosa y David VIP Oficial (EXCLUSIVAMENTE por sus correos autorizados)
+    if (cleanEmail === "rosaydavid1979@gmail.com" || cleanEmail === "rosa@tokroom.live") {
       found = {
         id: "user_rosa_guest",
         name: "Rosa y David",
         handle: "rosaydavid",
-        email: cleanEmail.includes("@") ? cleanEmail : "rosaydavid1979@gmail.com",
+        email: cleanEmail,
         role: "vip",
         isCreator: false,
         isHost: false,
@@ -380,7 +392,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({
         ok: false,
-        error: "No existe ninguna cuenta registrada con este correo o usuario. Por favor, pulsa en la pestaña 'Registrarse' para crear tu cuenta."
+        error: "No existe ninguna cuenta registrada con este correo electrónico. Por favor, pulsa en la pestaña 'Registrarse' para crear tu cuenta."
       }));
     }
 
@@ -613,6 +625,8 @@ const server = http.createServer(async (req, res) => {
       isCreator: isMain ? isCreatorDavid : isHost,
       lastSeen: Date.now()
     };
+    // PROTECCIÓN DE DATOS: nunca propagar correos en la presencia de salas
+    delete updatedUser.email;
 
     room.onlineUsers.set(user.id, updatedUser);
 
@@ -1041,7 +1055,7 @@ const server = http.createServer(async (req, res) => {
     if (userId) room.onlineUsers.delete(userId);
     if (userId) room.pendingInvites.delete(userId);
 
-    broadcast("user_banned", { userId, handle, name, email: userEmail, deleted: true, roomId: room.id }, room.id);
+    broadcast("user_banned", { userId, handle, name, deleted: true, roomId: room.id }, room.id);
     broadcast("stage_update", { stageSeats: room.stageSeats }, room.id);
     broadcast("presence_update", { onlineUsers: Array.from(room.onlineUsers.values()) }, room.id);
 
@@ -1056,11 +1070,17 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, bannedUsers: Array.from(room.bannedUsers) }));
   }
 
-  // Listar usuarios expulsados/bloqueados
+  // Listar usuarios expulsados/bloqueados (PROTECCIÓN DE DATOS: sin emails)
   if (pathname === "/api/user/expelled" && req.method === "GET") {
     const list = loadExpelledDb();
+    const sanitized = list.map(e => ({
+      id: e.id,
+      name: e.name,
+      handle: e.handle,
+      expelledAt: e.expelledAt
+    }));
     res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ ok: true, expelled: list }));
+    return res.end(JSON.stringify({ ok: true, expelled: sanitized }));
   }
 
   // Desbloquear y restaurar acceso a un usuario por correo o handle
@@ -1087,7 +1107,7 @@ const server = http.createServer(async (req, res) => {
           room.bannedUsers.delete(b);
         }
       }
-      broadcast("user_unbanned", { userId, email: cleanEmail, handle: cleanHandle }, room.id);
+      broadcast("user_unbanned", { userId, handle: cleanHandle }, room.id);
     });
 
     // 2. Quitar de expelled_users.json
@@ -1531,6 +1551,18 @@ wss.on("connection", (ws, req) => {
       } else if (msg.type === "stage_join_reject" && msg.data) {
         if (msg.data.userId) removePendingStageRequestInRoom(room, msg.data.userId);
         broadcast("stage_join_rejected", { targetUserId: msg.data.userId, roomId: room.id }, room.id);
+      } else if (msg.type === "moderator_add" && msg.data) {
+        msg.data.roomId = room.id;
+        if (msg.data.moderator && msg.data.moderator.handle) {
+          room.moderators.add(msg.data.moderator.handle.toLowerCase().replace('@', '').trim());
+        }
+        broadcast("moderator_add", msg.data, room.id);
+      } else if (msg.type === "moderator_remove" && msg.data) {
+        msg.data.roomId = room.id;
+        if (msg.data.target) {
+          room.moderators.delete(String(msg.data.target).toLowerCase().replace('@', '').trim());
+        }
+        broadcast("moderator_remove", msg.data, room.id);
       } else if (msg.type === "gift_sent" && msg.data) {
         msg.data.roomId = room.id;
         broadcast("gift_sent", msg.data, room.id);

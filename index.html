@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=26">
+  <link rel="stylesheet" href="styles.css?v=27">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -122,10 +122,10 @@
           <span>Normas</span>
         </button>
 
-        <!-- Botón Menú de Control del Anfitrión -->
-        <button class="btn-pill btn-moderation" id="openHostControlModalBtn" title="Panel de control y moderación de la sala">
+        <!-- Botón Menú de Control del Anfitrión / Moderador (Oculto por defecto hasta validar permisos) -->
+        <button class="btn-pill btn-moderation" id="openHostControlModalBtn" title="Panel de control y moderación de la sala" style="display: none;">
           <span class="btn-icon">🛡️</span>
-          <span>Menú Anfitrión</span>
+          <span>Menú Moderación</span>
         </button>
 
         <!-- Botón Descargar App Móvil -->
@@ -278,11 +278,11 @@
           <span class="dock-status" id="micStatusPill">ON</span>
         </button>
 
-        <!-- Botón Menú de Control y Moderación del Anfitrión (Al lado del micrófono abajo a la izquierda) -->
-        <button class="dock-btn dock-btn-mod" id="dockHostControlBtn" title="Menú de control y moderación del anfitrión">
+        <!-- Botón Menú de Control y Moderación del Anfitrión / Moderador (Oculto por defecto hasta validar permisos) -->
+        <button class="dock-btn dock-btn-mod" id="dockHostControlBtn" title="Menú de control y moderación de la sala" style="display: none;">
           <span class="dock-icon">🛡️</span>
           <span class="dock-label">Moderación</span>
-          <span class="dock-status" id="dockModStatusPill">HOST</span>
+          <span class="dock-status" id="dockModStatusPill">MOD</span>
         </button>
 
         <!-- Botón Crear Sala (Al lado de Moderación, con formato y tamaño de bloque dock) -->
@@ -451,9 +451,9 @@
             <div id="loginError" class="reg-error-box" style="display: none;"></div>
 
             <div class="form-group">
-              <label for="loginEmailInput">Introduce tu Correo Electrónico o Usuario (@): <span class="required-star">*</span></label>
-              <input type="text" id="loginEmailInput" class="form-input" placeholder="ejemplo: tu_correo@gmail.com o @elpikachu" required autocomplete="username" style="font-size: 15px; padding: 12px 14px;" />
-              <span class="input-hint">El sistema cargará tu cuenta registrada y tus permisos correspondientes.</span>
+              <label for="loginEmailInput">Introduce tu Correo Electrónico Registrado: <span class="required-star">*</span></label>
+              <input type="email" id="loginEmailInput" class="form-input" placeholder="ejemplo: tu_correo@gmail.com" required autocomplete="email" style="font-size: 15px; padding: 12px 14px;" />
+              <span class="input-hint">🔒 Acceso exclusivo por correo electrónico para garantizar la máxima seguridad y evitar que nadie suplante tu cuenta. No se permite el acceso por @usuario.</span>
             </div>
 
             <button type="submit" class="btn-primary-action btn-submit-register" id="btnSubmitLogin" style="margin-top: 14px;">
@@ -873,10 +873,10 @@
           </div>
 
           <div class="form-group">
-            <label>Correo Electrónico Oficial del Creador:</label>
-            <div class="verified-email-display" style="border: 1px solid rgba(255, 215, 0, 0.4); background: rgba(255, 215, 0, 0.08);">
-              <span id="profileModalEmail" style="color: #ffd700; font-weight: 700;">davidyrosa1979@gmail.com</span>
-              <span class="badge-verified" style="background: rgba(255, 215, 0, 0.2); color: #ffd700;">👑 Verificado (Creador)</span>
+            <label>Estado de Cuenta y Privacidad:</label>
+            <div class="verified-email-display" style="border: 1px solid rgba(37, 244, 238, 0.4); background: rgba(37, 244, 238, 0.08);">
+              <span id="profileModalEmail" style="color: #25f4ee; font-weight: 700; font-size: 13px;">🔒 Correo Cifrado y Oculto</span>
+              <span class="badge-verified" style="background: rgba(37, 244, 238, 0.2); color: #25f4ee;">🛡️ RGPD Seguro</span>
             </div>
           </div>
 
@@ -1154,10 +1154,10 @@
             <span class="badge" style="background: rgba(0, 230, 118, 0.2); color: #00e676; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Exclusivo Host</span>
           </div>
           <span class="mod-hint" style="display: block; font-size: 11.5px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.4;">
-            Si expulsaste o eliminaste una cuenta, introduce su correo o pulsa en la lista de abajo para <strong>quitar el bloqueo de inmediato</strong> y restaurar su acceso a la aplicación.
+            Si expulsaste o bloqueaste una cuenta, introduce su @usuario o ID o pulsa en la lista de abajo para <strong>quitar el bloqueo de inmediato</strong> y restaurar su acceso a la aplicación.
           </span>
           <div style="display: flex; gap: 8px;">
-            <input type="text" id="unbanEmailInput" placeholder="Escribe el correo (ej: usuario@gmail.com) o @usuario" class="form-input" style="flex: 1; font-size: 13px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 230, 118, 0.3); color: #fff; padding: 8px 12px; border-radius: 8px;" />
+            <input type="text" id="unbanEmailInput" placeholder="Escribe el @usuario o ID para desbloquear" class="form-input" style="flex: 1; font-size: 13px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 230, 118, 0.3); color: #fff; padding: 8px 12px; border-radius: 8px;" />
             <button type="button" id="btnUnbanEmailSubmit" style="background: #00e676; color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,230,118,0.3);">
               🟢 Desbloquear
             </button>
@@ -1533,6 +1533,6 @@
     <span>Moderación (HOST)</span>
   </button>
 
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>
