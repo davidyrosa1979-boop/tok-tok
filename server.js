@@ -49,6 +49,52 @@ const MIME_TYPES = {
 };
 
 // ===================================================================
+// CONTROL DE VERSIONES Y ACTUALIZACIÓN OBLIGATORIA
+// ===================================================================
+const VERSION_FILE = path.join(ROOT_DIR, "version_config.json");
+
+function loadVersionConfig() {
+  const defaultCfg = {
+    currentWebVersion: "43",
+    minWebVersion: "43",
+    currentApkVersion: "1.3.0",
+    minApkVersion: "1.3.0",
+    apkDownloadUrl: "/toktok.apk",
+    forceReloadAll: false,
+    releaseNotes: "Comprobación de versión automática y actualización forzosa activa."
+  };
+  try {
+    if (fs.existsSync(VERSION_FILE)) {
+      const data = JSON.parse(fs.readFileSync(VERSION_FILE, "utf-8"));
+      return { ...defaultCfg, ...data };
+    }
+  } catch (e) {
+    console.error("Error cargando version_config.json:", e);
+  }
+  return defaultCfg;
+}
+
+function saveVersionConfig(cfg) {
+  try {
+    fs.writeFileSync(VERSION_FILE, JSON.stringify(cfg, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Error guardando version_config.json:", e);
+  }
+}
+
+function compareSemver(v1, v2) {
+  const p1 = String(v1 || "0").replace(/[^0-9.]/g, "").split(".").map(n => parseInt(n, 10) || 0);
+  const p2 = String(v2 || "0").replace(/[^0-9.]/g, "").split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const a = p1[i] || 0;
+    const b = p2[i] || 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+  }
+  return 0;
+}
+
+// ===================================================================
 // BASE DE DATOS DE USUARIOS REGISTRADOS Y AUTENTICACIÓN
 // ===================================================================
 const USERS_FILE = path.join(ROOT_DIR, "users_db.json");
@@ -463,6 +509,51 @@ const server = http.createServer(async (req, res) => {
   // -----------------------------------------------------------------
   // 1. ENDPOINTS DE LA API EN TIEMPO REAL
   // -----------------------------------------------------------------
+
+  // Comprobación de versión y estado de actualización obligatoria
+  if ((pathname === "/api/version" || pathname === "/api/app-version") && req.method === "GET") {
+    const cfg = loadVersionConfig();
+    const clientApk = parsedUrl.query.apkVersion || parsedUrl.query.apk_version || null;
+    const clientWeb = parsedUrl.query.webVersion || parsedUrl.query.web_version || parsedUrl.query.v || null;
+
+    let isApkOutdated = false;
+    if (clientApk && cfg.minApkVersion) {
+      if (compareSemver(clientApk, cfg.minApkVersion) < 0) {
+        isApkOutdated = true;
+      }
+    }
+
+    let isWebOutdated = false;
+    if (clientWeb && cfg.minWebVersion) {
+      if (compareSemver(clientWeb, cfg.minWebVersion) < 0) {
+        isWebOutdated = true;
+      }
+    }
+
+    const updateRequired = isApkOutdated || isWebOutdated || !!cfg.forceReloadAll;
+    const updateType = isApkOutdated ? "apk" : (isWebOutdated ? "web" : null);
+
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate"
+    });
+    return res.end(JSON.stringify({
+      ok: true,
+      currentWebVersion: cfg.currentWebVersion,
+      minWebVersion: cfg.minWebVersion,
+      currentApkVersion: cfg.currentApkVersion,
+      minApkVersion: cfg.minApkVersion,
+      apkDownloadUrl: cfg.apkDownloadUrl || "/toktok.apk",
+      releaseNotes: cfg.releaseNotes,
+      updateRequired,
+      updateType,
+      isApkOutdated,
+      isWebOutdated,
+      message: isApkOutdated
+        ? `Tu versión instalada de Tok Tok (${clientApk}) ha quedado obsoleta. Debes instalar la versión ${cfg.currentApkVersion} para continuar.`
+        : (isWebOutdated ? `Actualizando a la versión ${cfg.currentWebVersion}...` : "Versión actualizada.")
+    }));
+  }
 
   // Listar usuarios registrados en la comunidad (PROTECCIÓN DE DATOS: nunca exponer correos)
   if (pathname === "/api/users" && req.method === "GET") {

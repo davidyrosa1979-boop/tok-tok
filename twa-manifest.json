@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#0C0D14",
   "enableNotifications": true,
-  "startUrl": "/index.html",
+  "startUrl": "/index.html?apk_version=1.3.0",
   "iconUrl": "https://tok-tok-live.onrender.com/icon-512.png",
   "maskableIconUrl": "https://tok-tok-live.onrender.com/icon-512.png",
   "splashScreenFadeOutDuration": 300,

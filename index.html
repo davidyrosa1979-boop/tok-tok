@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=42">
+  <link rel="stylesheet" href="styles.css?v=43">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -1546,6 +1546,54 @@
     </div>
   </div>
 
-  <script src="app.js?v=42"></script>
+  <!-- ================================================================= -->
+  <!-- MODAL DE ACTUALIZACIÓN OBLIGATORIA (FORCE UPDATE INQUEBRANTABLE) -->
+  <!-- ================================================================= -->
+  <div class="force-update-overlay" id="forceUpdateOverlay" style="display: none;">
+    <div class="force-update-card">
+      <div class="update-badge-row">
+        <span class="update-pill-badge" id="forceUpdateBadge">⚠️ ACTUALIZACIÓN OBLIGATORIA</span>
+      </div>
+      
+      <div class="update-icon-circle">
+        <span class="update-icon-emoji" id="forceUpdateIcon">🚀</span>
+      </div>
+
+      <h2 class="update-card-title" id="forceUpdateTitle">¡Nueva Versión Requerida!</h2>
+      <p class="update-card-desc" id="forceUpdateDesc">
+        Existe una actualización crítica de Tok Tok. Por motivos de seguridad y compatibilidad con las salas en vivo, debes actualizar para seguir usando la app.
+      </p>
+
+      <div class="update-version-tags" id="forceUpdateVersionTags">
+        <span class="tag-version tag-old" id="forceUpdateOldVer">Tu versión: v1.3.0</span>
+        <span class="tag-arrow">➔</span>
+        <span class="tag-version tag-new" id="forceUpdateNewVer">Nueva: v1.4.0</span>
+      </div>
+
+      <!-- Sección APK: Botón de descarga directa -->
+      <div id="forceUpdateApkAction" style="display: none; width: 100%;">
+        <a id="btnDownloadApkUpdate" href="/toktok.apk" download="toktok.apk" class="btn-primary-action btn-update-download">
+          <span class="btn-icon">📲</span>
+          <span class="btn-text">Descargar e Instalar Nueva Versión (APK)</span>
+        </a>
+        <div class="update-help-note">
+          <span>💡 Al pulsar, se descargará el archivo <strong>toktok.apk</strong>. Ábrelo en tu móvil para instalar la versión actualizada en segundos.</span>
+        </div>
+      </div>
+
+      <!-- Sección Web / PWA: Barra de progreso de recarga forzada -->
+      <div id="forceUpdateWebAction" style="display: none; width: 100%;">
+        <div class="update-spinner-box">
+          <div class="update-spinner"></div>
+          <span class="update-spinner-text" id="forceUpdateSpinnerText">Descargando componentes actualizados...</span>
+        </div>
+        <button type="button" class="btn-primary-action" id="btnForceReloadNow" style="margin-top: 14px; background: #fe2c55;">
+          🔄 Recargar Tok Tok Ahora
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=43"></script>
 </body>
 </html>

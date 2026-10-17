@@ -5,6 +5,20 @@
  * ===================================================================
  */
 
+// Versión Web y Detección de Versión de APK
+const CLIENT_WEB_VERSION = "43";
+let CURRENT_APK_VERSION = null;
+try {
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _paramApk = _urlParams.get("apk_version") || _urlParams.get("apkVersion");
+  if (_paramApk) {
+    localStorage.setItem("toktok_installed_apk_version", _paramApk);
+    CURRENT_APK_VERSION = _paramApk;
+  } else {
+    CURRENT_APK_VERSION = localStorage.getItem("toktok_installed_apk_version") || null;
+  }
+} catch (_) {}
+
 // Claves de almacenamiento local
 const STORAGE_KEY_USERS = "toktok_registered_users_v1";
 const STORAGE_KEY_PROFILE = "toktok_local_profile_v2";
@@ -6009,7 +6023,121 @@ function shareCurrentRoom() {
   }
 }
 
-function initTokTokApp() {
+// ===================================================================
+// CONTROL DE VERSIONES Y ACTUALIZACIÓN OBLIGATORIA (FORCE UPDATE)
+// ===================================================================
+let isAppUpdateBlocked = false;
+
+async function checkAppVersionRequirement() {
+  try {
+    const query = new URLSearchParams({
+      webVersion: CLIENT_WEB_VERSION,
+      _t: Date.now()
+    });
+    if (CURRENT_APK_VERSION) {
+      query.set("apkVersion", CURRENT_APK_VERSION);
+    }
+
+    const res = await fetch(`/api/version?${query.toString()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data || !data.ok) return false;
+
+    if (data.updateRequired) {
+      isAppUpdateBlocked = true;
+      showForceUpdateModal(data);
+      return true;
+    } else {
+      const overlay = document.getElementById("forceUpdateOverlay");
+      if (overlay && !isAppUpdateBlocked) overlay.style.display = "none";
+    }
+  } catch (err) {
+    console.warn("Aviso al comprobar versión:", err);
+  }
+  return false;
+}
+
+function showForceUpdateModal(data) {
+  const overlay = document.getElementById("forceUpdateOverlay");
+  if (!overlay) return;
+
+  const titleEl = document.getElementById("forceUpdateTitle");
+  const descEl = document.getElementById("forceUpdateDesc");
+  const oldVerEl = document.getElementById("forceUpdateOldVer");
+  const newVerEl = document.getElementById("forceUpdateNewVer");
+  const apkAction = document.getElementById("forceUpdateApkAction");
+  const webAction = document.getElementById("forceUpdateWebAction");
+  const downloadBtn = document.getElementById("btnDownloadApkUpdate");
+  const badgeEl = document.getElementById("forceUpdateBadge");
+
+  overlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  if (data.updateType === "apk") {
+    if (badgeEl) badgeEl.textContent = "🛑 ACTUALIZACIÓN DE APK OBLIGATORIA";
+    if (titleEl) titleEl.textContent = "¡Actualización de App Requerida!";
+    if (descEl) descEl.textContent = data.message || "Tu versión instalada de Tok Tok ha quedado obsoleta. Para poder seguir usando la aplicación debes descargar e instalar la versión nueva.";
+    if (oldVerEl) oldVerEl.textContent = `Tu versión: v${CURRENT_APK_VERSION || '1.3.0'}`;
+    if (newVerEl) newVerEl.textContent = `Nueva: v${data.currentApkVersion || data.minApkVersion}`;
+    if (apkAction) apkAction.style.display = "block";
+    if (webAction) webAction.style.display = "none";
+    if (downloadBtn && data.apkDownloadUrl) {
+      downloadBtn.href = data.apkDownloadUrl;
+      downloadBtn.setAttribute("download", `toktok-v${data.currentApkVersion || 'latest'}.apk`);
+    }
+  } else {
+    if (badgeEl) badgeEl.textContent = "🔄 ACTUALIZACIÓN AUTOMÁTICA";
+    if (titleEl) titleEl.textContent = "Actualizando Tok Tok...";
+    if (descEl) descEl.textContent = data.message || "Se ha publicado una nueva versión con mejoras importantes. Estamos actualizando tus archivos para que puedas continuar.";
+    if (oldVerEl) oldVerEl.textContent = `Versión anterior: v${CLIENT_WEB_VERSION}`;
+    if (newVerEl) newVerEl.textContent = `Nueva versión: v${data.currentWebVersion}`;
+    if (apkAction) apkAction.style.display = "none";
+    if (webAction) webAction.style.display = "block";
+
+    performImmediateWebUpdate();
+  }
+}
+
+async function performImmediateWebUpdate() {
+  const spinnerText = document.getElementById("forceUpdateSpinnerText");
+  if (spinnerText) spinnerText.textContent = "Limpiando memoria caché y aplicando novedades...";
+
+  try {
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.update().catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error("Error limpiando caché:", e);
+  }
+
+  if (spinnerText) spinnerText.textContent = "¡Todo listo! Reiniciando en 1 segundo...";
+  setTimeout(() => {
+    window.location.reload();
+  }, 1200);
+}
+
+async function initTokTokApp() {
+  const btnReload = document.getElementById("btnForceReloadNow");
+  if (btnReload) {
+    btnReload.addEventListener("click", () => performImmediateWebUpdate());
+  }
+
+  const isBlocked = await checkAppVersionRequirement();
+  if (isBlocked) {
+    console.warn("La aplicación requiere actualización obligatoria antes de iniciar.");
+    return;
+  }
+
   loadRegisteredUsers();
   loadDmInbox();
   loadLocalProfile();
@@ -6026,6 +6154,10 @@ function initTokTokApp() {
   initRealtimeSync();
 
   addChatMessage("TokTokBot", `👋 ¡Bienvenido a ${TokTokState.roomName || 'Tok Tok Live'} (+18)! Sala independiente en tiempo real lista.`);
+
+  // Comprobar versión periódicamente (cada 5 minutos y al volver a la app)
+  setInterval(checkAppVersionRequirement, 5 * 60 * 1000);
+  window.addEventListener("focus", () => checkAppVersionRequirement());
 }
 
 if (document.readyState === "loading") {

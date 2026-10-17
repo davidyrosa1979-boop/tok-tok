@@ -23,7 +23,7 @@ plugins {
 def twaManifest = [
     applicationId: 'com.toktok.live',
     hostName: 'tok-tok-live.onrender.com', // The domain being opened in the TWA.
-    launchUrl: '/index.html', // The start path for the TWA. Must be relative to the domain.
+    launchUrl: '/index.html?apk_version=1.3.0', // The start path for the TWA. Must be relative to the domain.
     name: 'Tok Tok Live', // The application name.
     launcherName: 'Tok Tok', // The name shown on the Android Launcher.
     themeColor: '#FE2C55', // The color used for the status bar.

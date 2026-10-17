@@ -1,0 +1,9 @@
+{
+  "currentWebVersion": "43",
+  "minWebVersion": "43",
+  "currentApkVersion": "1.3.0",
+  "minApkVersion": "1.3.0",
+  "apkDownloadUrl": "/toktok.apk",
+  "forceReloadAll": false,
+  "releaseNotes": "Comprobación de versión automática y actualización forzosa activa."
+}

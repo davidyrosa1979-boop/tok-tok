@@ -4639,5 +4639,207 @@ body.toktok-theme {
   box-shadow: 0 2px 10px rgba(254, 44, 85, 0.5);
 }
 
+/* ===================================================================
+   MODAL DE ACTUALIZACIÓN OBLIGATORIA INQUEBRANTABLE (FORCE UPDATE)
+   =================================================================== */
+.force-update-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999 !important;
+  background: rgba(10, 11, 18, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  user-select: none;
+}
+
+.force-update-card {
+  max-width: 440px;
+  width: 100%;
+  background: linear-gradient(165deg, #181926 0%, #0d0e16 100%);
+  border: 1.5px solid rgba(254, 44, 85, 0.45);
+  box-shadow: 0 0 60px rgba(254, 44, 85, 0.25), 0 24px 60px rgba(0, 0, 0, 0.95);
+  border-radius: 26px;
+  padding: 32px 24px 26px;
+  text-align: center;
+  position: relative;
+  animation: forcePopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes forcePopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.update-badge-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.update-pill-badge {
+  background: rgba(254, 44, 85, 0.18);
+  border: 1px solid #fe2c55;
+  color: #ff4d6d;
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 0 15px rgba(254, 44, 85, 0.3);
+  animation: pulseBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
+.update-icon-circle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 44, 85, 0.25) 0%, rgba(37, 244, 238, 0.12) 100%);
+  border: 2px solid rgba(254, 44, 85, 0.5);
+  box-shadow: 0 0 30px rgba(254, 44, 85, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 36px;
+}
+
+.update-card-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.3px;
+}
+
+.update-card-desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #94a3b8;
+  margin: 0 0 20px 0;
+}
+
+.update-version-tags {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.tag-version {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tag-old {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  text-decoration: line-through;
+}
+
+.tag-arrow {
+  color: #fe2c55;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.tag-new {
+  background: rgba(37, 244, 238, 0.15);
+  color: #25f4ee;
+  border: 1px solid rgba(37, 244, 238, 0.4);
+}
+
+.btn-update-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 15px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fe2c55 0%, #ff0055 100%);
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 8px 25px rgba(254, 44, 85, 0.45);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-update-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(254, 44, 85, 0.6);
+}
+
+.btn-update-download:active {
+  transform: translateY(1px);
+}
+
+.update-help-note {
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.update-help-note strong {
+  color: #cbd5e1;
+}
+
+.update-spinner-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.update-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3.5px solid rgba(254, 44, 85, 0.2);
+  border-top-color: #fe2c55;
+  border-right-color: #25f4ee;
+  border-radius: 50%;
+  animation: updateSpin 0.75s linear infinite;
+}
+
+@keyframes updateSpin {
+  to { transform: rotate(360deg); }
+}
+
+.update-spinner-text {
+  font-size: 13.5px;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
 
 
