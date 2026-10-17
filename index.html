@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=28">
+  <link rel="stylesheet" href="styles.css?v=29">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -86,13 +86,6 @@
           <span id="inviteBtnLabel">Invitar Registrados (0/15)</span>
         </button>
 
-        <!-- Botón Buzón / Bandeja de Entrada -->
-        <button class="btn-pill btn-inbox-header" id="openInboxModalBtn" title="Bandeja de Entrada • Mensajes Privados">
-          <span class="btn-icon">📬</span>
-          <span>Buzón</span>
-          <span class="dm-unread-badge" id="dmHeaderUnreadBadge" style="display: none;">0</span>
-        </button>
-
         <!-- Insignia Dorada CREADOR OFICIAL -->
         <div class="creator-crown-pill" id="headerCreatorPill" title="Creador Oficial de TokRoom">
           <span class="crown-icon">👑</span>
@@ -111,21 +104,10 @@
           <span id="headerProfileName">DYR (Creador)</span>
         </button>
 
-        <!-- Botón Cerrar Sesión / Cambiar Cuenta -->
-        <button class="btn-pill" id="quickLogoutHeaderBtn" title="Cerrar Sesión / Cambiar de Usuario" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); font-size: 11.5px; padding: 6px 10px; cursor: pointer;">
-          <span>🚪 Salir</span>
-        </button>
-
         <!-- Botón Normas de la Comunidad -->
         <button class="btn-pill btn-rules" id="openRulesModalBtn" title="Ver normas de la comunidad">
           <span class="btn-icon">📜</span>
           <span>Normas</span>
-        </button>
-
-        <!-- Botón Menú de Control del Anfitrión / Moderador (Oculto por defecto hasta validar permisos) -->
-        <button class="btn-pill btn-moderation" id="openHostControlModalBtn" title="Panel de control y moderación de la sala" style="display: none;">
-          <span class="btn-icon">🛡️</span>
-          <span>Menú Moderación</span>
         </button>
 
         <!-- Botón Descargar App Móvil -->
@@ -1527,12 +1509,6 @@
     </div>
   </div>
 
-  <!-- Botón Flotante de Moderación ocultado (ahora integrado en el dock al lado del micrófono) -->
-  <button class="floating-host-mod-fab" id="floatingHostModFab" style="display: none !important;" title="Abrir panel de control y moderación del anfitrión">
-    <span>🛡️</span>
-    <span>Moderación (HOST)</span>
-  </button>
-
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

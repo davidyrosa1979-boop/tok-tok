@@ -1935,18 +1935,16 @@ function hasModerationPrivileges() {
 // Control dinámico de visibilidad del botón de Moderación (Seguridad y Privacidad)
 function updateModeratorAccessUI() {
   const hasAccess = hasModerationPrivileges();
-  const openHostControlBtn = document.getElementById("openHostControlModalBtn");
   const dockHostControlBtn = document.getElementById("dockHostControlBtn");
-  const floatingHostModFab = document.getElementById("floatingHostModFab");
+  const dockModStatusPill = document.getElementById("dockModStatusPill");
 
-  if (openHostControlBtn) {
-    openHostControlBtn.style.display = hasAccess ? "inline-flex" : "none";
-  }
   if (dockHostControlBtn) {
     dockHostControlBtn.style.display = hasAccess ? "inline-flex" : "none";
-  }
-  if (floatingHostModFab) {
-    floatingHostModFab.style.display = hasAccess ? "flex" : "none";
+    if (dockModStatusPill) {
+      const isCreator = isOfficialCreator();
+      const isHost = TokTokState.localUser.role === "host" || TokTokState.localUser.isHost;
+      dockModStatusPill.textContent = isCreator ? "CREADOR" : (isHost ? "HOST" : "MOD");
+    }
   }
 
   // Si no tiene permisos y el panel está abierto, cerrarlo de inmediato
@@ -3128,9 +3126,7 @@ function setupEventListeners() {
   if (closeRulesBtn) closeRulesBtn.addEventListener("click", () => closeModal("rulesModal"));
   if (acceptRulesBtn) acceptRulesBtn.addEventListener("click", () => closeModal("rulesModal"));
 
-  const openHostControlBtn = document.getElementById("openHostControlModalBtn");
   const dockHostControlBtn = document.getElementById("dockHostControlBtn");
-  const floatingHostModFab = document.getElementById("floatingHostModFab");
   const closeHostControlBtn = document.getElementById("closeHostControlModalBtn");
 
   const openHostControlHandler = () => {
@@ -3143,9 +3139,7 @@ function setupEventListeners() {
     openModal("hostControlModal");
   };
 
-  if (openHostControlBtn) openHostControlBtn.addEventListener("click", openHostControlHandler);
   if (dockHostControlBtn) dockHostControlBtn.addEventListener("click", openHostControlHandler);
-  if (floatingHostModFab) floatingHostModFab.addEventListener("click", openHostControlHandler);
   if (closeHostControlBtn) closeHostControlBtn.addEventListener("click", () => closeModal("hostControlModal"));
 
   // Acciones globales del Menú del Anfitrión
