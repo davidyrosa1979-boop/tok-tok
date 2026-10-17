@@ -541,12 +541,7 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ ok: false, error: "Nombre y usuario son obligatorios." }));
     }
 
-    if (cleanEmail === "davidyrosa1979@gmail.com") {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ ok: false, error: "Este correo pertenece al Creador Oficial (DYR). Por favor, ve a la pestaña 'Iniciar Sesión'." }));
-    }
-
-    if (cleanName.toUpperCase() === "DYR" || cleanHandle === "dyr") {
+    if (cleanName.toUpperCase() === "DYR" && cleanEmail !== "davidyrosa1979@gmail.com") {
       res.writeHead(400, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ ok: false, error: "El nombre y usuario 'DYR' están reservados para el Creador Oficial." }));
     }

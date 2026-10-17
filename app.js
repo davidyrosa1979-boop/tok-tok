@@ -3929,16 +3929,8 @@ function handleMandatoryRegistration(e) {
     return showError("🚫 REGISTRO DENEGADO: Se detectó lenguaje soez o insultos en tus datos. Las normas de la comunidad prohíben totalmente palabras vulgares.");
   }
 
-  // Regla de seguridad: Si introduce el correo del creador, redirigir a Iniciar Sesión
-  if (email.toLowerCase().trim() === "davidyrosa1979@gmail.com") {
-    switchAuthTab("login");
-    const loginInp = document.getElementById("loginEmailInput");
-    if (loginInp) loginInp.value = email;
-    return showError("Este correo pertenece al Creador Oficial (DYR). Por favor, entra por la pestaña 'Iniciar Sesión'.");
-  }
-
-  // Regla de seguridad: Nadie puede registrarse con el nombre o usuario DYR
-  if (name.toUpperCase().trim() === "DYR" || handle.toLowerCase().trim() === "dyr") {
+  // Regla de seguridad: Nadie puede registrarse con el nombre o usuario DYR salvo el creador oficial
+  if ((name.toUpperCase().trim() === "DYR" || handle.toLowerCase().trim() === "dyr") && email.toLowerCase().trim() !== "davidyrosa1979@gmail.com") {
     return showError("El nombre y usuario 'DYR' están reservados exclusivamente para el Creador Oficial.");
   }
 

@@ -3,12 +3,12 @@
  * Actualización: Verificación obligatoria de correo con código PIN y buzón simulado + Nuevo diseño móvil limpio y ordenado.
  */
 
-const CACHE_NAME = "toktok-pwa-v35";
+const CACHE_NAME = "toktok-pwa-v36";
 const ASSETS_TO_CACHE = [
   "./",
-  "./index.html?v=35",
-  "./styles.css?v=35",
-  "./app.js?v=35",
+  "./index.html?v=36",
+  "./styles.css?v=36",
+  "./app.js?v=36",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
