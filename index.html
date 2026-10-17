@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tok Tok">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=43">
+  <link rel="stylesheet" href="styles.css?v=44">
 </head>
 <body class="toktok-theme">
   <!-- Elemento de Audio WebRTC para Escuchar en Vivo a los Participantes -->
@@ -297,12 +297,6 @@
           <span class="dock-icon">📷</span>
           <span class="dock-label">Cámara</span>
           <span class="dock-status" id="cameraStatusPill">ON</span>
-        </button>
-
-        <!-- Filtros y Efectos / Belleza -->
-        <button class="dock-btn" id="toggleEffectsBtn">
-          <span class="dock-icon">✨</span>
-          <span class="dock-label">Filtros</span>
         </button>
 
         <!-- Botón Directorio Comunidad -->
@@ -940,46 +934,6 @@
     </div>
   </div>
 
-  <!-- Modal: Filtros de Cámara / Efectos Tok Tok -->
-  <div class="modal-backdrop" id="effectsModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title-box">
-          <span class="modal-emoji">✨</span>
-          <h3>Filtros & Estilos Tok Tok</h3>
-        </div>
-        <button class="modal-close-btn" id="closeEffectsModalBtn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="effects-grid" id="effectsGrid">
-          <button class="filter-choice-btn active" data-filter="none">
-            <span class="filter-icon">🚫</span>
-            <span>Normal</span>
-          </button>
-          <button class="filter-choice-btn" data-filter="glow">
-            <span class="filter-icon">🌟</span>
-            <span>Tok Glow</span>
-          </button>
-          <button class="filter-choice-btn" data-filter="cyberpunk">
-            <span class="filter-icon">🔮</span>
-            <span>Neón Cyber</span>
-          </button>
-          <button class="filter-choice-btn" data-filter="retro">
-            <span class="filter-icon">📼</span>
-            <span>Vintage 90s</span>
-          </button>
-          <button class="filter-choice-btn" data-filter="golden">
-            <span class="filter-icon">✨</span>
-            <span>Golden Hour</span>
-          </button>
-          <button class="filter-choice-btn" data-filter="bw">
-            <span class="filter-icon">🎬</span>
-            <span>Cinema B&W</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal: Descargar e Instalar Tok Tok en el Móvil (PWA & APK) -->
   <div class="modal-backdrop" id="downloadModal">
@@ -1594,6 +1548,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=43"></script>
+  <script src="app.js?v=44"></script>
 </body>
 </html>

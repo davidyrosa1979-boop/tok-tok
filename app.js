@@ -2627,9 +2627,11 @@ function setupEventListeners() {
     });
   }
 
-  // Filtros de Cámara
-  document.getElementById("toggleEffectsBtn").addEventListener("click", () => openModal("effectsModal"));
-  document.getElementById("closeEffectsModalBtn").addEventListener("click", () => closeModal("effectsModal"));
+  // Filtros de Cámara (eliminados a petición del usuario)
+  const toggleEffectsBtn = document.getElementById("toggleEffectsBtn");
+  if (toggleEffectsBtn) toggleEffectsBtn.addEventListener("click", () => openModal("effectsModal"));
+  const closeEffectsModalBtn = document.getElementById("closeEffectsModalBtn");
+  if (closeEffectsModalBtn) closeEffectsModalBtn.addEventListener("click", () => closeModal("effectsModal"));
 
   document.querySelectorAll(".filter-choice-btn").forEach(btn => {
     btn.addEventListener("click", () => {
